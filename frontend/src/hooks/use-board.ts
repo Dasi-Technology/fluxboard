@@ -152,10 +152,30 @@ export const useBoard = () => {
   const reorderColumn = useCallback(
     async (columnId: string, newPosition: number) => {
       const oldColumns = board?.columns ? [...board.columns] : [];
+      if (!board) return;
+
       try {
+        // Optimistic update
         moveColumn(columnId, newPosition);
-        await api.updateColumn(columnId, { position: newPosition });
+
+        // Calculate new positions for all columns
+        const currentColumns = [...oldColumns];
+        const draggedColumnIndex = currentColumns.findIndex(
+          (c) => c.id === columnId
+        );
+        if (draggedColumnIndex === -1) return;
+
+        const [draggedColumn] = currentColumns.splice(draggedColumnIndex, 1);
+        currentColumns.splice(newPosition, 0, draggedColumn);
+
+        const columnPositions: Array<[string, number]> = currentColumns.map(
+          (col, index) => [col.id, index]
+        );
+
+        // Call the new reorder API endpoint
+        await api.reorderColumns(board.id, columnPositions);
       } catch (err) {
+        // Rollback on error
         if (board) {
           setBoard({ ...board, columns: oldColumns });
         }

@@ -56,6 +56,15 @@ export const deleteColumn = async (columnId: string): Promise<void> => {
   await api.delete(`/columns/${columnId}`);
 };
 
+export const reorderColumns = async (
+  boardId: string,
+  columnPositions: Array<[string, number]>
+): Promise<void> => {
+  await api.patch(`/boards/${boardId}/columns/reorder`, {
+    column_positions: columnPositions,
+  });
+};
+
 // Card API endpoints
 export const createCard = async (
   columnId: string,
