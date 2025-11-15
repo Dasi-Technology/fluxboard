@@ -41,6 +41,11 @@ pub enum SseEvent {
         to_column_id: Uuid,
         new_position: i32,
     },
+    CardReordered {
+        card_id: Uuid,
+        column_id: Uuid,
+        new_position: i32,
+    },
 
     // Label events
     LabelCreated {
@@ -75,6 +80,7 @@ impl SseEvent {
             SseEvent::CardUpdated { .. } => "card:updated",
             SseEvent::CardDeleted { .. } => "card:deleted",
             SseEvent::CardMoved { .. } => "card:moved",
+            SseEvent::CardReordered { .. } => "card:reordered",
             SseEvent::LabelCreated { .. } => "label:created",
             SseEvent::LabelUpdated { .. } => "label:updated",
             SseEvent::LabelDeleted { .. } => "label:deleted",

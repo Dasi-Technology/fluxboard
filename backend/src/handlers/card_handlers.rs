@@ -181,15 +181,32 @@ pub async fn move_card(
 /// Reorder cards within a column
 pub async fn reorder_cards(
     pool: web::Data<PgPool>,
+    sse_manager: web::Data<Arc<SseManager>>,
     column_id: web::Path<Uuid>,
     input: web::Json<ReorderCardsRequest>,
 ) -> AppResult<HttpResponse> {
-    CardService::reorder_cards(
-        pool.get_ref(),
-        column_id.into_inner(),
-        input.into_inner().card_positions,
-    )
-    .await?;
+    let col_id = column_id.into_inner();
+    let card_positions = input.into_inner().card_positions;
+
+    CardService::reorder_cards(pool.get_ref(), col_id, card_positions.clone()).await?;
+
+    // Get the board_id from the column for SSE broadcasting
+    if let Ok(Some(column)) = crate::models::Column::find_by_id(pool.get_ref(), col_id).await {
+        // Broadcast SSE events for each reordered card
+        for (card_id, new_position) in card_positions {
+            sse_manager
+                .broadcast(
+                    column.board_id,
+                    SseEvent::CardReordered {
+                        card_id,
+                        column_id: col_id,
+                        new_position,
+                    },
+                )
+                .await;
+        }
+    }
+
     Ok(HttpResponse::Ok().finish())
 }
 

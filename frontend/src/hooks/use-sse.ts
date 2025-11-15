@@ -96,6 +96,18 @@ export const useSSE = (shareToken: string | null) => {
           break;
         }
 
+        case "card_reordered": {
+          const { card_id, column_id, new_position } = event;
+          console.log("[useSSE] Reordering card:", {
+            card_id,
+            column_id,
+            new_position,
+          });
+          // Move the card within the same column to the new position
+          moveCard(card_id, column_id, new_position);
+          break;
+        }
+
         case "label_created": {
           const label = event.label as Label;
           addLabel(label.card_id, label);

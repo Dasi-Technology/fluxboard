@@ -78,6 +78,15 @@ export const createCard = async (
   return response.data;
 };
 
+export const reorderCards = async (
+  columnId: string,
+  cardPositions: Array<[string, number]>
+): Promise<void> => {
+  await api.patch(`/columns/${columnId}/cards/reorder`, {
+    card_positions: cardPositions,
+  });
+};
+
 export const updateCard = async (
   cardId: string,
   updates: Partial<
@@ -85,6 +94,18 @@ export const updateCard = async (
   >
 ): Promise<Card> => {
   const response = await api.put<Card>(`/cards/${cardId}`, updates);
+  return response.data;
+};
+
+export const moveCard = async (
+  cardId: string,
+  columnId: string,
+  position: number
+): Promise<Card> => {
+  const response = await api.patch<Card>(`/cards/${cardId}/move`, {
+    column_id: columnId,
+    position,
+  });
   return response.data;
 };
 

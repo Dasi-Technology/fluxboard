@@ -263,13 +263,55 @@ export const useBoard = () => {
   const handleMoveCard = useCallback(
     async (cardId: string, newColumnId: string, newPosition: number) => {
       const oldColumns = board?.columns ? [...board.columns] : [];
+
+      // Find the card's current column
+      let currentCard: Card | undefined;
+      let currentColumnId: string | undefined;
+
+      board?.columns?.forEach((col) => {
+        const card = col.cards?.find((c) => c.id === cardId);
+        if (card) {
+          currentCard = card;
+          currentColumnId = col.id;
+        }
+      });
+
+      if (!currentCard || !currentColumnId) return;
+
+      const isWithinSameColumn = currentColumnId === newColumnId;
+
       try {
+        // Optimistic update
         moveCard(cardId, newColumnId, newPosition);
-        await api.updateCard(cardId, {
-          column_id: newColumnId,
-          position: newPosition,
-        });
+
+        if (isWithinSameColumn) {
+          // For same-column moves, use the reorder endpoint with all card positions
+          const columnCards =
+            board?.columns?.find((col) => col.id === newColumnId)?.cards || [];
+
+          // Calculate new positions for all cards after the move
+          const updatedCards = [...columnCards];
+          const cardIndex = updatedCards.findIndex((c) => c.id === cardId);
+
+          if (cardIndex !== -1) {
+            // Remove card from current position
+            const [movedCard] = updatedCards.splice(cardIndex, 1);
+            // Insert at new position
+            updatedCards.splice(newPosition, 0, movedCard);
+
+            // Create position array with sequential positions
+            const cardPositions: Array<[string, number]> = updatedCards.map(
+              (c, index) => [c.id, index]
+            );
+
+            await api.reorderCards(newColumnId, cardPositions);
+          }
+        } else {
+          // For cross-column moves, use the move_card endpoint
+          await api.moveCard(cardId, newColumnId, newPosition);
+        }
       } catch (err) {
+        // Rollback on error
         if (board) {
           setBoard({ ...board, columns: oldColumns });
         }

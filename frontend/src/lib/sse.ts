@@ -13,6 +13,7 @@ export type SSEEventType =
   | "card:updated"
   | "card:deleted"
   | "card:moved"
+  | "card:reordered"
   | "label:created"
   | "label:updated"
   | "label:deleted"
@@ -71,6 +72,13 @@ export interface SSECardMovedEvent {
   new_position: number;
 }
 
+export interface SSECardReorderedEvent {
+  type: "card_reordered";
+  card_id: string;
+  column_id: string;
+  new_position: number;
+}
+
 export interface SSELabelCreatedEvent {
   type: "label_created";
   label: Label;
@@ -111,6 +119,7 @@ export type SSEEvent =
   | SSECardUpdatedEvent
   | SSECardDeletedEvent
   | SSECardMovedEvent
+  | SSECardReorderedEvent
   | SSELabelCreatedEvent
   | SSELabelUpdatedEvent
   | SSELabelDeletedEvent
@@ -243,6 +252,9 @@ export class SSEClient {
     });
     this.eventSource.addEventListener("card:moved", (e) => {
       this.handleEvent("card:moved", e);
+    });
+    this.eventSource.addEventListener("card:reordered", (e) => {
+      this.handleEvent("card:reordered", e);
     });
 
     // Label events
