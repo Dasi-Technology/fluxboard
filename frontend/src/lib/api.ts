@@ -12,12 +12,12 @@ const api: AxiosInstance = axios.create({
 
 // Board API endpoints
 export const createBoard = async (name: string): Promise<Board> => {
-  const response = await api.post<Board>("/boards", { name });
+  const response = await api.post<Board>("/boards", { title: name });
   return response.data;
 };
 
 export const getBoard = async (shareToken: string): Promise<Board> => {
-  const response = await api.get<Board>(`/boards/${shareToken}`);
+  const response = await api.get<Board>(`/boards/share/${shareToken}`);
   return response.data;
 };
 
@@ -25,7 +25,9 @@ export const updateBoardName = async (
   shareToken: string,
   name: string
 ): Promise<Board> => {
-  const response = await api.put<Board>(`/boards/${shareToken}`, { name });
+  const response = await api.put<Board>(`/boards/share/${shareToken}`, {
+    title: name,
+  });
   return response.data;
 };
 
@@ -35,8 +37,7 @@ export const createColumn = async (
   title: string,
   position: number
 ): Promise<Column> => {
-  const response = await api.post<Column>("/columns", {
-    board_id: boardId,
+  const response = await api.post<Column>(`/boards/${boardId}/columns`, {
     title,
     position,
   });
@@ -61,8 +62,7 @@ export const createCard = async (
   title: string,
   position: number
 ): Promise<Card> => {
-  const response = await api.post<Card>("/cards", {
-    column_id: columnId,
+  const response = await api.post<Card>(`/columns/${columnId}/cards`, {
     title,
     position,
   });
@@ -89,8 +89,7 @@ export const createLabel = async (
   name: string,
   color: string
 ): Promise<Label> => {
-  const response = await api.post<Label>("/labels", {
-    card_id: cardId,
+  const response = await api.post<Label>(`/cards/${cardId}/labels`, {
     name,
     color,
   });

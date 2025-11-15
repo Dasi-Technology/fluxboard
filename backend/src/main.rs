@@ -1,3 +1,4 @@
+use actix::Actor;
 use actix_web::{App, HttpServer, middleware, web};
 use log::info;
 use std::io;
@@ -13,6 +14,7 @@ mod websocket;
 
 use config::Config;
 use db::init_pool;
+use websocket::WsServer;
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
@@ -37,25 +39,37 @@ async fn main() -> io::Result<()> {
 
     info!("Database connection pool established");
 
+    // Start WebSocket server actor
+    let ws_server = WsServer::new().start();
+    info!("WebSocket server started");
+
     // Start HTTP server
     HttpServer::new(move || {
         App::new()
             // Share database pool across all handlers
             .app_data(web::Data::new(pool.clone()))
+            // Share WebSocket server across all handlers
+            .app_data(web::Data::new(ws_server.clone()))
             // Enable logger middleware
             .wrap(middleware::Logger::default())
-            // CORS middleware (will be configured properly later)
+            // CORS middleware for development
             .wrap(
                 actix_cors::Cors::default()
-                    .allow_any_origin()
-                    .allow_any_method()
-                    .allow_any_header(),
+                    .allowed_origin("http://localhost:3000")
+                    .allowed_methods(vec!["GET", "POST", "PUT", "PATCH", "DELETE"])
+                    .allowed_headers(vec![
+                        actix_web::http::header::AUTHORIZATION,
+                        actix_web::http::header::ACCEPT,
+                        actix_web::http::header::CONTENT_TYPE,
+                    ])
+                    .max_age(3600),
             )
             // Health check endpoint
             .route("/health", web::get().to(health_check))
-            // WebSocket endpoint placeholder
-            .route("/ws", web::get().to(websocket_handler))
-        // API routes will be added here
+            // WebSocket endpoint
+            .route("/ws/{share_token}", web::get().to(websocket::ws_handler))
+            // Configure API routes
+            .configure(handlers::configure_routes)
     })
     .bind((config.server_host.as_str(), config.server_port))?
     .run()
@@ -67,16 +81,5 @@ async fn health_check() -> actix_web::Result<impl actix_web::Responder> {
     Ok(web::Json(serde_json::json!({
         "status": "ok",
         "message": "Fluxboard backend is running"
-    })))
-}
-
-/// WebSocket handler placeholder
-async fn websocket_handler(
-    req: actix_web::HttpRequest,
-    stream: web::Payload,
-) -> actix_web::Result<impl actix_web::Responder> {
-    // TODO: Implement WebSocket upgrade logic
-    Ok(web::Json(serde_json::json!({
-        "error": "WebSocket not yet implemented"
     })))
 }

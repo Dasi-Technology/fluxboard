@@ -4,7 +4,7 @@
 
 export interface Board {
   id: string;
-  name: string;
+  title: string;
   share_token: string;
   created_at: string;
   updated_at: string;
@@ -46,11 +46,11 @@ export interface Label {
  */
 
 export interface CreateBoardRequest {
-  name: string;
+  title: string;
 }
 
 export interface UpdateBoardRequest {
-  name: string;
+  title?: string;
 }
 
 export interface CreateColumnRequest {

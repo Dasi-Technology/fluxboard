@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                UPDATE cards\n                SET position = $1, updated_at = NOW()\n                WHERE id = $2 AND column_id = $3\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3de4b399d9b519cbce8b73fd3dd5f0b7627387295a3cbc3d3e00622dd8ec2211"
+}

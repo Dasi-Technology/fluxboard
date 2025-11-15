@@ -1,4 +1,4 @@
-use actix_web::{error::ResponseError, http::StatusCode, HttpResponse};
+use actix_web::{HttpResponse, error::ResponseError, http::StatusCode};
 use serde::Serialize;
 use std::fmt;
 
@@ -78,6 +78,13 @@ impl ResponseError for AppError {
 impl From<sqlx::Error> for AppError {
     fn from(err: sqlx::Error) -> Self {
         AppError::DatabaseError(err)
+    }
+}
+
+/// Convert actix_web::Error to AppError
+impl From<actix_web::Error> for AppError {
+    fn from(err: actix_web::Error) -> Self {
+        AppError::InternalError(format!("Actix error: {}", err))
     }
 }
 
