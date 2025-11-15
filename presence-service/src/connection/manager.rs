@@ -255,6 +255,31 @@ impl ConnectionManager {
             addr, board_id, user_id, username
         );
 
+        // Send information about existing users to the newly joined user
+        {
+            let rooms = self.rooms.read().await;
+            if let Some(room) = rooms.get(&board_id) {
+                for existing_user in room.users() {
+                    // Skip sending info about the user themselves
+                    if existing_user.addr == addr {
+                        continue;
+                    }
+
+                    let existing_user_joined = BinaryMessage::UserJoined {
+                        board_id,
+                        user_id: existing_user.user_id,
+                        username: existing_user.username.clone(),
+                        color: existing_user.color,
+                    };
+
+                    // Send only to the new user
+                    if let Err(e) = self.send_to_client(addr, existing_user_joined).await {
+                        warn!("Failed to send existing user info to new user: {}", e);
+                    }
+                }
+            }
+        }
+
         // Broadcast UserJoined to other room members (local and remote)
         let user_joined = BinaryMessage::UserJoined {
             board_id,
@@ -266,7 +291,7 @@ impl ConnectionManager {
         // Publish to Redis for other instances
         self.publish_to_redis(board_id, &user_joined).await;
 
-        // Broadcast locally
+        // Broadcast locally (excluding the new user who already knows they joined)
         self.broadcast_to_room(board_id, user_joined, Some(addr))
             .await;
 
