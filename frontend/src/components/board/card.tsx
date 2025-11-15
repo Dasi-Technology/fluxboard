@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useUIStore } from "@/store/ui-store";
 import { useBoard } from "@/hooks/use-board";
+import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 
 interface CardProps {
   card: CardType;
@@ -81,9 +82,9 @@ export function Card({ card }: CardProps) {
       </div>
 
       {card.description && (
-        <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-          {card.description}
-        </p>
+        <div className="text-xs text-muted-foreground mt-2 line-clamp-3">
+          <MarkdownRenderer content={card.description} />
+        </div>
       )}
 
       {card.labels && card.labels.length > 0 && (

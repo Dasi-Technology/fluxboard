@@ -14,11 +14,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Eye, Code } from "lucide-react";
 import { useUIStore } from "@/store/ui-store";
 import { useBoardStore } from "@/store/board-store";
 import { useBoard } from "@/hooks/use-board";
 import type { Card } from "@/lib/types";
+import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 
 export function EditCardDialog() {
   const {
@@ -32,6 +33,7 @@ export function EditCardDialog() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   // Find the card
   const card = useMemo(() => {
@@ -114,15 +116,48 @@ export function EditCardDialog() {
             </div>
 
             <div>
-              <Label htmlFor="card-description">Description</Label>
-              <Textarea
-                id="card-description"
-                placeholder="Add a more detailed description..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                disabled={isLoading}
-                rows={4}
-              />
+              <div className="flex items-center justify-between mb-2">
+                <Label htmlFor="card-description">Description</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPreview(!showPreview)}
+                  className="h-8"
+                >
+                  {showPreview ? (
+                    <>
+                      <Code className="h-4 w-4 mr-2" />
+                      Edit
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Preview
+                    </>
+                  )}
+                </Button>
+              </div>
+              {showPreview ? (
+                <div className="min-h-[100px] p-3 border rounded-md bg-muted/50">
+                  {description.trim() ? (
+                    <MarkdownRenderer content={description} />
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">
+                      No description to preview
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <Textarea
+                  id="card-description"
+                  placeholder="Add a more detailed description... (Markdown supported)"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  disabled={isLoading}
+                  rows={6}
+                />
+              )}
             </div>
 
             <div>
