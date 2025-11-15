@@ -21,17 +21,19 @@ interface BoardPageProps {
 export default function BoardPage({ params }: BoardPageProps) {
   const { shareToken } = params;
   const { loadBoard } = useBoard();
-  const { board, isLoading, error } = useBoardStore();
+  const { board, isLoading, error, reset } = useBoardStore();
 
   // Establish SSE connection
   useSSE(shareToken);
 
-  // Load board data on mount
+  // Reset store and load board data when shareToken changes
   useEffect(() => {
+    reset();
     loadBoard(shareToken);
-  }, [shareToken, loadBoard]);
+  }, [shareToken, loadBoard, reset]);
 
-  if (isLoading) {
+  // Show loader while loading or if we haven't loaded successfully yet
+  if (isLoading || (!board && !error)) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-100">
         <div className="text-center">
@@ -42,6 +44,7 @@ export default function BoardPage({ params }: BoardPageProps) {
     );
   }
 
+  // Only show "Board Not Found" if there's an error or no board after loading
   if (error || !board) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-100">
@@ -71,7 +74,7 @@ export default function BoardPage({ params }: BoardPageProps) {
           <div className="flex items-center justify-between max-w-[2000px] mx-auto">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">
-                {board.title}
+                {board?.title}
               </h1>
               <p className="text-sm text-slate-600 mt-1">
                 Real-time collaborative board
