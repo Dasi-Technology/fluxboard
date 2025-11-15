@@ -1,6 +1,7 @@
 use actix_web::{App, HttpServer, middleware, web};
 use log::info;
 use std::io;
+use std::sync::Arc;
 
 mod config;
 mod db;
@@ -46,7 +47,7 @@ async fn main() -> io::Result<()> {
     info!("Database migrations completed successfully");
 
     // Initialize SSE manager
-    let sse_manager = sse::SseManager::new();
+    let sse_manager = Arc::new(sse::SseManager::new());
     info!("SSE manager initialized");
 
     // Start HTTP server

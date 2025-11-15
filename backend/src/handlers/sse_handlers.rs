@@ -2,6 +2,7 @@ use actix_web::{Error, HttpRequest, HttpResponse, web};
 use futures::stream::{self, Stream};
 use std::convert::Infallible;
 use std::pin::Pin;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio_stream::StreamExt as _;
 use tokio_stream::wrappers::ReceiverStream;
@@ -14,7 +15,7 @@ use sqlx::PgPool;
 /// GET /sse/{share_token}
 pub async fn board_events_stream(
     pool: web::Data<PgPool>,
-    sse_manager: web::Data<SseManager>,
+    sse_manager: web::Data<Arc<SseManager>>,
     path: web::Path<String>,
     _req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
