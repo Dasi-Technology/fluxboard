@@ -30,7 +30,7 @@ export const useDragAndDrop = ({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // Require 8px of movement before drag starts
+        distance: 5, // Require 5px of movement before drag starts (better for mobile)
       },
     })
   );

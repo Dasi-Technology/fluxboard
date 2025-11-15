@@ -55,7 +55,7 @@ export function Column({ column }: ColumnProps) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.6 : 1,
   };
 
   const cardIds = column.cards?.map((card) => card.id) || [];
@@ -78,14 +78,16 @@ export function Column({ column }: ColumnProps) {
     <div
       ref={setSortableRef}
       style={style}
-      className="flex-shrink-0 w-80 bg-muted/50 rounded-lg p-4 flex flex-col h-full"
+      className="flex-shrink-0 w-72 md:w-80 bg-muted/50 rounded-lg p-3 md:p-4 flex flex-col h-full"
     >
       <div
         {...attributes}
         {...listeners}
-        className="flex items-center justify-between mb-3 cursor-grab active:cursor-grabbing"
+        className="flex items-center justify-between mb-2 md:mb-3 cursor-grab active:cursor-grabbing"
       >
-        <h2 className="font-semibold text-lg">{column.title}</h2>
+        <h2 className="font-semibold text-base md:text-lg truncate flex-1 mr-2">
+          {column.title}
+        </h2>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -110,7 +112,7 @@ export function Column({ column }: ColumnProps) {
 
       <div
         ref={setDroppableRef}
-        className="flex-1 overflow-y-auto space-y-2 mb-2 min-h-[100px]"
+        className="flex-1 overflow-y-auto space-y-2 mb-2 min-h-[100px] transition-colors duration-200"
       >
         <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
           {column.cards?.map((card) => (

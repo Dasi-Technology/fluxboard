@@ -36,7 +36,8 @@ export function Card({ card }: CardProps) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.3 : 1,
+    scale: isDragging ? 0.95 : 1,
   };
 
   const handleEdit = () => {
@@ -56,11 +57,15 @@ export function Card({ card }: CardProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className="group relative bg-white border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow cursor-move"
+      className={`group relative bg-white border rounded-lg p-2.5 md:p-3 shadow-sm hover:shadow-md transition-all duration-200 cursor-move ${
+        isDragging ? "ring-2 ring-blue-400 ring-offset-2" : ""
+      }`}
       onClick={handleEdit}
     >
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="text-sm font-medium flex-1">{card.title}</h3>
+      <div className="flex items-start justify-between gap-1.5 md:gap-2">
+        <h3 className="text-xs md:text-sm font-medium flex-1 break-words">
+          {card.title}
+        </h3>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button
             variant="ghost"

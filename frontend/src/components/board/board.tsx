@@ -178,7 +178,7 @@ export function Board() {
           onClick={handleClick}
           onMouseDown={handleMouseDown}
         >
-          <div className="flex gap-4 p-6 h-full min-h-0">
+          <div className="flex gap-3 md:gap-4 p-3 md:p-6 h-full min-h-0">
             <SortableContext
               items={columnIds}
               strategy={horizontalListSortingStrategy}
@@ -210,7 +210,7 @@ export function Board() {
 
         <DragOverlay>
           {activeType === "card" && activeCard ? (
-            <div className="rotate-3 opacity-80">
+            <div className="rotate-6 scale-105 cursor-grabbing shadow-2xl">
               <Card card={activeCard} />
             </div>
           ) : null}

@@ -81,17 +81,17 @@ export default function BoardPage({ params }: BoardPageProps) {
     <>
       <div className="flex flex-col h-screen bg-slate-100">
         {/* Header */}
-        <header className="bg-white border-b border-slate-200 px-6 py-4">
-          <div className="flex items-center justify-between max-w-[2000px] mx-auto">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">
+        <header className="bg-white border-b border-slate-200 px-4 md:px-6 py-2 md:py-4">
+          <div className="flex items-center justify-between max-w-[2000px] mx-auto gap-3">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg md:text-2xl font-bold text-slate-900 truncate">
                 {board?.title}
               </h1>
-              <p className="text-sm text-slate-600 mt-1">
+              <p className="text-sm text-slate-600 mt-1 hidden md:block">
                 Real-time collaborative board
               </p>
             </div>
-            <div className="w-96">
+            <div className="w-auto md:w-96 flex-shrink-0">
               <ShareLink shareToken={shareToken} />
             </div>
           </div>

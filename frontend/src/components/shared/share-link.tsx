@@ -26,34 +26,38 @@ export function ShareLink({ shareToken }: ShareLinkProps) {
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="share-link">Share Link</Label>
+      <Label htmlFor="share-link" className="hidden md:block">
+        Share Link
+      </Label>
       <div className="flex gap-2">
         <Input
           id="share-link"
           value={shareUrl}
           readOnly
-          className="flex-1"
+          className="flex-1 text-xs md:text-sm"
           onClick={(e) => e.currentTarget.select()}
         />
         <Button
           onClick={handleCopy}
           variant={copied ? "default" : "outline"}
-          className="min-w-[100px]"
+          className="min-w-[80px] md:min-w-[100px] text-xs md:text-sm"
         >
           {copied ? (
             <>
-              <Check className="h-4 w-4 mr-2" />
-              Copied!
+              <Check className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Copied!</span>
+              <span className="sm:hidden">✓</span>
             </>
           ) : (
             <>
-              <Copy className="h-4 w-4 mr-2" />
-              Copy
+              <Copy className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Copy</span>
+              <span className="sm:hidden">📋</span>
             </>
           )}
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-muted-foreground hidden md:block">
         Anyone with this link can view and edit this board.
       </p>
     </div>
