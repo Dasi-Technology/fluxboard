@@ -333,9 +333,14 @@ export const useBoardStore = create<BoardStore>((set) => ({
   addLabel: (cardId, label) =>
     set((state) => {
       if (!state.board?.columns) return state;
-      const columns = state.board.columns.map((col) => ({
-        ...col,
-        cards: col.cards?.map((card) => {
+
+      let labelAdded = false;
+      const columns = state.board.columns.map((col) => {
+        const hasCard = col.cards?.some((card) => card.id === cardId);
+        if (!hasCard) return col;
+
+        // Create new cards array with updated card
+        const cards = col.cards?.map((card) => {
           if (card.id === cardId) {
             // Check if label already exists to prevent duplicates from SSE
             const existingLabel = card.labels?.find((l) => l.id === label.id);
@@ -346,45 +351,105 @@ export const useBoardStore = create<BoardStore>((set) => ({
               );
               return card;
             }
+            labelAdded = true;
+            // Create new card with new labels array
             return { ...card, labels: [...(card.labels || []), label] };
           }
           return card;
-        }),
-      }));
-      return {
-        board: { ...state.board, columns },
-      };
+        });
+
+        // Only create new column object if we actually modified a card
+        return labelAdded ? { ...col, cards } : col;
+      });
+
+      return labelAdded
+        ? {
+            board: { ...state.board, columns },
+          }
+        : state;
     }),
 
   updateLabel: (labelId, updates) =>
     set((state) => {
       if (!state.board?.columns) return state;
-      const columns = state.board.columns.map((col) => ({
-        ...col,
-        cards: col.cards?.map((card) => ({
-          ...card,
-          labels: card.labels?.map((label) =>
-            label.id === labelId ? { ...label, ...updates } : label
-          ),
-        })),
-      }));
-      return {
-        board: { ...state.board, columns },
-      };
+
+      let labelUpdated = false;
+      const columns = state.board.columns.map((col) => {
+        const hasLabel = col.cards?.some((card) =>
+          card.labels?.some((label) => label.id === labelId)
+        );
+        if (!hasLabel) return col;
+
+        // Create new cards array with updated labels
+        const cards = col.cards?.map((card) => {
+          const cardHasLabel = card.labels?.some(
+            (label) => label.id === labelId
+          );
+          if (!cardHasLabel) return card;
+
+          // Create new labels array
+          const labels = card.labels?.map((label) => {
+            if (label.id === labelId) {
+              labelUpdated = true;
+              return { ...label, ...updates };
+            }
+            return label;
+          });
+
+          // Create new card object
+          return { ...card, labels };
+        });
+
+        // Create new column object
+        return { ...col, cards };
+      });
+
+      return labelUpdated
+        ? {
+            board: { ...state.board, columns },
+          }
+        : state;
     }),
 
   deleteLabel: (labelId) =>
     set((state) => {
       if (!state.board?.columns) return state;
-      const columns = state.board.columns.map((col) => ({
-        ...col,
-        cards: col.cards?.map((card) => ({
-          ...card,
-          labels: card.labels?.filter((label) => label.id !== labelId),
-        })),
-      }));
-      return {
-        board: { ...state.board, columns },
-      };
+
+      let labelDeleted = false;
+      const columns = state.board.columns.map((col) => {
+        const hasLabel = col.cards?.some((card) =>
+          card.labels?.some((label) => label.id === labelId)
+        );
+        if (!hasLabel) return col;
+
+        // Create new cards array with filtered labels
+        const cards = col.cards?.map((card) => {
+          const cardHasLabel = card.labels?.some(
+            (label) => label.id === labelId
+          );
+          if (!cardHasLabel) return card;
+
+          // Create new labels array without the deleted label
+          const labels = card.labels?.filter((label) => {
+            if (label.id === labelId) {
+              labelDeleted = true;
+              return false;
+            }
+            return true;
+          });
+
+          // Create new card object
+          return { ...card, labels };
+        });
+
+        // Create new column object
+        return { ...col, cards };
+      });
+
+      return labelDeleted
+        ? {
+            board: { ...state.board, columns },
+          }
+        : state;
     }),
 }));

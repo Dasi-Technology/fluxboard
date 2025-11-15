@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -34,11 +34,14 @@ export function EditCardDialog() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Find the card
-  let card: Card | undefined;
-  board?.columns?.forEach((col) => {
-    const foundCard = col.cards?.find((c) => c.id === selectedCardId);
-    if (foundCard) card = foundCard;
-  });
+  const card = useMemo(() => {
+    let foundCard: Card | undefined;
+    board?.columns?.forEach((col) => {
+      const c = col.cards?.find((c) => c.id === selectedCardId);
+      if (c) foundCard = c;
+    });
+    return foundCard;
+  }, [board, selectedCardId]);
 
   useEffect(() => {
     if (card) {

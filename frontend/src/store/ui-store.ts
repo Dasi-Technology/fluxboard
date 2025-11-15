@@ -74,8 +74,7 @@ export const useUIStore = create<UIStore>((set) => ({
 
   openManageLabelsDialog: (cardId) =>
     set({ isManageLabelsDialogOpen: true, selectedCardId: cardId }),
-  closeManageLabelsDialog: () =>
-    set({ isManageLabelsDialogOpen: false, selectedCardId: null }),
+  closeManageLabelsDialog: () => set({ isManageLabelsDialogOpen: false }),
 
   // Toast actions
   showToast: (message, type) => set({ toast: { message, type } }),
