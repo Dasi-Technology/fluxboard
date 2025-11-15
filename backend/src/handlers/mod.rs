@@ -22,7 +22,6 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             )
             // Board routes
             .route("/boards", web::post().to(board_handlers::create_board))
-            .route("/boards", web::get().to(board_handlers::list_boards))
             .route("/boards/{id}", web::get().to(board_handlers::get_board))
             .route("/boards/{id}", web::put().to(board_handlers::update_board))
             .route(
