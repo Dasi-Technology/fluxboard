@@ -14,6 +14,7 @@ mod utils;
 
 use config::Config;
 use db::init_pool;
+use services::AiService;
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
@@ -50,6 +51,12 @@ async fn main() -> io::Result<()> {
     let sse_manager = Arc::new(sse::SseManager::new());
     info!("SSE manager initialized");
 
+    // Initialize AI service if API key is configured
+    let ai_service = config.gemini_api_key.clone().map(|key| {
+        info!("AI service initialized with Gemini API");
+        Arc::new(AiService::new(key))
+    });
+
     // Start HTTP server
     let config_clone = config.clone();
     HttpServer::new(move || {
@@ -72,11 +79,18 @@ async fn main() -> io::Result<()> {
             }
         }
 
-        App::new()
+        let mut app = App::new()
             // Share database pool across all handlers
             .app_data(web::Data::new(pool.clone()))
             // Share SSE manager across all handlers
-            .app_data(web::Data::new(sse_manager.clone()))
+            .app_data(web::Data::new(sse_manager.clone()));
+
+        // Add AI service if available
+        if let Some(ref ai_svc) = ai_service {
+            app = app.app_data(web::Data::new(ai_svc.clone()));
+        }
+
+        app
             // Enable logger middleware
             .wrap(middleware::Logger::default())
             // CORS middleware

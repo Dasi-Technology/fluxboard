@@ -69,6 +69,11 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
                 "/cards/{id}/move",
                 web::patch().to(card_handlers::move_card),
             )
+            // AI generation route
+            .route(
+                "/cards/ai/generate-description",
+                web::post().to(card_handlers::generate_description),
+            )
             // Label routes
             .route(
                 "/cards/{card_id}/labels",

@@ -1,12 +1,12 @@
 use actix_web::{HttpResponse, web};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::error::AppResult;
+use crate::error::{AppError, AppResult};
 use crate::models::{Column, UpdateCardInput};
-use crate::services::CardService;
+use crate::services::{AiService, CardService};
 use crate::sse::events::SseEvent;
 use crate::sse::manager::SseManager;
 
@@ -29,6 +29,28 @@ pub struct MoveCardRequest {
 #[derive(Deserialize)]
 pub struct ReorderCardsRequest {
     pub card_positions: Vec<(Uuid, i32)>,
+}
+
+/// Request body for AI generation
+#[derive(Deserialize)]
+pub struct GenerateDescriptionRequest {
+    pub title: String,
+    pub context: Option<String>,
+    pub format: DescriptionFormat,
+}
+
+/// Description format type
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum DescriptionFormat {
+    Bullets,
+    Long,
+}
+
+/// Response for AI generation
+#[derive(Serialize)]
+pub struct GenerateDescriptionResponse {
+    pub description: String,
 }
 
 /// Create a new card
@@ -169,4 +191,35 @@ pub async fn reorder_cards(
     )
     .await?;
     Ok(HttpResponse::Ok().finish())
+}
+
+/// Generate AI description for a card
+pub async fn generate_description(
+    ai_service: Option<web::Data<Arc<AiService>>>,
+    input: web::Json<GenerateDescriptionRequest>,
+) -> AppResult<HttpResponse> {
+    // Check if AI service is available
+    let ai_service = ai_service.ok_or_else(|| {
+        AppError::BadRequest(
+            "AI service not configured. Please add GEMINI_API_KEY to .env".to_string(),
+        )
+    })?;
+
+    let input = input.into_inner();
+    let context = input.context.unwrap_or_default();
+
+    let description = match input.format {
+        DescriptionFormat::Bullets => {
+            ai_service
+                .generate_bullet_points(&input.title, &context)
+                .await?
+        }
+        DescriptionFormat::Long => {
+            ai_service
+                .generate_long_description(&input.title, &context)
+                .await?
+        }
+    };
+
+    Ok(HttpResponse::Ok().json(GenerateDescriptionResponse { description }))
 }

@@ -14,12 +14,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Eye, Code } from "lucide-react";
+import { Plus, X, Eye, Code, Sparkles, List, FileText } from "lucide-react";
 import { useUIStore } from "@/store/ui-store";
 import { useBoardStore } from "@/store/board-store";
 import { useBoard } from "@/hooks/use-board";
 import type { Card } from "@/lib/types";
 import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
+import { generateDescription, type DescriptionFormat } from "@/lib/api";
 
 export function EditCardDialog() {
   const {
@@ -34,6 +35,7 @@ export function EditCardDialog() {
   const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Find the card
   const card = useMemo(() => {
@@ -92,6 +94,26 @@ export function EditCardDialog() {
     }
   };
 
+  const handleGenerateDescription = async (format: DescriptionFormat) => {
+    if (!title.trim()) {
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const result = await generateDescription({
+        title: title.trim(),
+        context: description.trim() || undefined,
+        format,
+      });
+      setDescription(result.description);
+    } catch (error) {
+      console.error("Failed to generate description:", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <Dialog open={isEditCardDialogOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
@@ -118,25 +140,51 @@ export function EditCardDialog() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label htmlFor="card-description">Description</Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowPreview(!showPreview)}
-                  className="h-8"
-                >
-                  {showPreview ? (
-                    <>
-                      <Code className="h-4 w-4 mr-2" />
-                      Edit
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="h-4 w-4 mr-2" />
-                      Preview
-                    </>
-                  )}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleGenerateDescription("bullets")}
+                    disabled={!title.trim() || isGenerating || isLoading}
+                    className="h-8"
+                    title="Generate bullet points"
+                  >
+                    <List className="h-4 w-4 mr-2" />
+                    {isGenerating ? "Generating..." : "AI Bullets"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleGenerateDescription("long")}
+                    disabled={!title.trim() || isGenerating || isLoading}
+                    className="h-8"
+                    title="Generate long description"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    {isGenerating ? "Generating..." : "AI Long"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowPreview(!showPreview)}
+                    className="h-8"
+                  >
+                    {showPreview ? (
+                      <>
+                        <Code className="h-4 w-4 mr-2" />
+                        Edit
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Preview
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
               {showPreview ? (
                 <div className="min-h-[100px] p-3 border rounded-md bg-muted/50">

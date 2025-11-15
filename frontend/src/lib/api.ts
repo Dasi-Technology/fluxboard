@@ -117,4 +117,27 @@ export const deleteLabel = async (labelId: string): Promise<void> => {
   await api.delete(`/labels/${labelId}`);
 };
 
+// AI generation endpoints
+export type DescriptionFormat = "bullets" | "long";
+
+export interface GenerateDescriptionRequest {
+  title: string;
+  context?: string;
+  format: DescriptionFormat;
+}
+
+export interface GenerateDescriptionResponse {
+  description: string;
+}
+
+export const generateDescription = async (
+  request: GenerateDescriptionRequest
+): Promise<GenerateDescriptionResponse> => {
+  const response = await api.post<GenerateDescriptionResponse>(
+    "/cards/ai/generate-description",
+    request
+  );
+  return response.data;
+};
+
 export default api;
