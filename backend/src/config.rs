@@ -11,6 +11,8 @@ pub struct Config {
     pub server_port: u16,
     /// Logging level configuration
     pub rust_log: String,
+    /// Additional CORS allowed origin (optional, for production)
+    pub cors_origin: Option<String>,
 }
 
 impl Config {
@@ -24,6 +26,7 @@ impl Config {
                 .parse()
                 .expect("SERVER_PORT must be a valid u16"),
             rust_log: env::var("RUST_LOG").unwrap_or_else(|_| "info".to_string()),
+            cors_origin: env::var("CORS_ORIGIN").ok(),
         }
     }
 }

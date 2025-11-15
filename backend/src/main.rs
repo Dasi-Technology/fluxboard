@@ -52,7 +52,27 @@ async fn main() -> io::Result<()> {
     info!("WebSocket server started");
 
     // Start HTTP server
+    let config_clone = config.clone();
     HttpServer::new(move || {
+        // Configure CORS with localhost:3000 and optional additional origin
+        let mut cors = actix_cors::Cors::default()
+            .allowed_origin("http://localhost:3000")
+            .allowed_methods(vec!["GET", "POST", "PUT", "PATCH", "DELETE"])
+            .allowed_headers(vec![
+                actix_web::http::header::AUTHORIZATION,
+                actix_web::http::header::ACCEPT,
+                actix_web::http::header::CONTENT_TYPE,
+            ])
+            .max_age(3600);
+
+        // Add additional CORS origin if configured
+        if let Some(ref origin) = config_clone.cors_origin {
+            if !origin.is_empty() {
+                info!("Adding additional CORS origin: {}", origin);
+                cors = cors.allowed_origin(origin.as_str());
+            }
+        }
+
         App::new()
             // Share database pool across all handlers
             .app_data(web::Data::new(pool.clone()))
@@ -60,18 +80,8 @@ async fn main() -> io::Result<()> {
             .app_data(web::Data::new(ws_server.clone()))
             // Enable logger middleware
             .wrap(middleware::Logger::default())
-            // CORS middleware for development
-            .wrap(
-                actix_cors::Cors::default()
-                    .allowed_origin("http://localhost:3000")
-                    .allowed_methods(vec!["GET", "POST", "PUT", "PATCH", "DELETE"])
-                    .allowed_headers(vec![
-                        actix_web::http::header::AUTHORIZATION,
-                        actix_web::http::header::ACCEPT,
-                        actix_web::http::header::CONTENT_TYPE,
-                    ])
-                    .max_age(3600),
-            )
+            // CORS middleware
+            .wrap(cors)
             // Health check endpoint
             .route("/health", web::get().to(health_check))
             // WebSocket endpoint
