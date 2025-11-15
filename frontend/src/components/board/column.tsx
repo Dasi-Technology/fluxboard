@@ -52,11 +52,6 @@ export function Column({ column }: ColumnProps) {
     },
   });
 
-  const setNodeRef = (node: HTMLElement | null) => {
-    setSortableRef(node);
-    setDroppableRef(node);
-  };
-
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -81,7 +76,7 @@ export function Column({ column }: ColumnProps) {
 
   return (
     <div
-      ref={setNodeRef}
+      ref={setSortableRef}
       style={style}
       className="flex-shrink-0 w-80 bg-muted/50 rounded-lg p-4 flex flex-col max-h-full"
     >
@@ -113,7 +108,10 @@ export function Column({ column }: ColumnProps) {
         </DropdownMenu>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-2 mb-2 min-h-[100px]">
+      <div
+        ref={setDroppableRef}
+        className="flex-1 overflow-y-auto space-y-2 mb-2 min-h-[100px]"
+      >
         <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
           {column.cards?.map((card) => (
             <Card key={card.id} card={card} />
