@@ -7,6 +7,7 @@ pub mod board_handlers;
 pub mod card_handlers;
 pub mod column_handlers;
 pub mod label_handlers;
+pub mod sse_handlers;
 
 use actix_web::web;
 
@@ -14,6 +15,11 @@ use actix_web::web;
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api")
+            // SSE route
+            .route(
+                "/sse/{share_token}",
+                web::get().to(sse_handlers::board_events_stream),
+            )
             // Board routes
             .route("/boards", web::post().to(board_handlers::create_board))
             .route("/boards", web::get().to(board_handlers::list_boards))

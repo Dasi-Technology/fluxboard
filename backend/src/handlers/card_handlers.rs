@@ -1,14 +1,14 @@
-use actix::Addr;
 use actix_web::{HttpResponse, web};
 use serde::Deserialize;
 use sqlx::PgPool;
+use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::error::AppResult;
 use crate::models::{Column, UpdateCardInput};
 use crate::services::CardService;
-use crate::websocket::messages::{WsMessage, WsMessageType};
-use crate::websocket::server::{Broadcast, WsServer};
+use crate::sse::events::SseEvent;
+use crate::sse::manager::SseManager;
 
 /// Request body for creating a card
 #[derive(Deserialize)]
@@ -34,7 +34,7 @@ pub struct ReorderCardsRequest {
 /// Create a new card
 pub async fn create_card(
     pool: web::Data<PgPool>,
-    ws_server: web::Data<Addr<WsServer>>,
+    sse_manager: web::Data<Arc<SseManager>>,
     column_id: web::Path<Uuid>,
     input: web::Json<CreateCardRequest>,
 ) -> AppResult<HttpResponse> {
@@ -51,16 +51,13 @@ pub async fn create_card(
 
     // Get the column to find the board_id
     if let Ok(Some(column)) = Column::find_by_id(pool.get_ref(), col_id).await {
-        // Broadcast card creation via WebSocket
-        log::info!(
-            "Broadcasting card creation: {} to board: {}",
-            card.id,
-            column.board_id
-        );
-        let ws_message = WsMessage::new(column.board_id, WsMessageType::CardCreated(card.clone()));
-        ws_server.do_send(Broadcast {
-            message: ws_message,
-        });
+        // Broadcast card creation via SSE
+        sse_manager
+            .broadcast(
+                column.board_id,
+                SseEvent::CardCreated { card: card.clone() },
+            )
+            .await;
     }
 
     Ok(HttpResponse::Created().json(card))
@@ -75,7 +72,7 @@ pub async fn get_card(pool: web::Data<PgPool>, id: web::Path<Uuid>) -> AppResult
 /// Update a card
 pub async fn update_card(
     pool: web::Data<PgPool>,
-    ws_server: web::Data<Addr<WsServer>>,
+    sse_manager: web::Data<Arc<SseManager>>,
     id: web::Path<Uuid>,
     input: web::Json<UpdateCardInput>,
 ) -> AppResult<HttpResponse> {
@@ -84,16 +81,13 @@ pub async fn update_card(
 
     // Get the column to find the board_id
     if let Ok(Some(column)) = Column::find_by_id(pool.get_ref(), card.column_id).await {
-        // Broadcast card update via WebSocket
-        log::info!(
-            "Broadcasting card update: {} to board: {}",
-            card.id,
-            column.board_id
-        );
-        let ws_message = WsMessage::new(column.board_id, WsMessageType::CardUpdated(card.clone()));
-        ws_server.do_send(Broadcast {
-            message: ws_message,
-        });
+        // Broadcast card update via SSE
+        sse_manager
+            .broadcast(
+                column.board_id,
+                SseEvent::CardUpdated { card: card.clone() },
+            )
+            .await;
     }
 
     Ok(HttpResponse::Ok().json(card))
@@ -102,7 +96,7 @@ pub async fn update_card(
 /// Delete a card
 pub async fn delete_card(
     pool: web::Data<PgPool>,
-    ws_server: web::Data<Addr<WsServer>>,
+    sse_manager: web::Data<Arc<SseManager>>,
     id: web::Path<Uuid>,
 ) -> AppResult<HttpResponse> {
     let card_id = id.into_inner();
@@ -112,17 +106,10 @@ pub async fn delete_card(
         if let Ok(Some(column)) = Column::find_by_id(pool.get_ref(), card.column_id).await {
             CardService::delete_card(pool.get_ref(), card_id).await?;
 
-            // Broadcast card deletion via WebSocket
-            log::info!(
-                "Broadcasting card deletion: {} from board: {}",
-                card_id,
-                column.board_id
-            );
-            let ws_message =
-                WsMessage::new(column.board_id, WsMessageType::CardDeleted { id: card_id });
-            ws_server.do_send(Broadcast {
-                message: ws_message,
-            });
+            // Broadcast card deletion via SSE
+            sse_manager
+                .broadcast(column.board_id, SseEvent::CardDeleted { card_id })
+                .await;
         }
     }
 
@@ -132,34 +119,38 @@ pub async fn delete_card(
 /// Move a card to a different column
 pub async fn move_card(
     pool: web::Data<PgPool>,
-    ws_server: web::Data<Addr<WsServer>>,
+    sse_manager: web::Data<Arc<SseManager>>,
     id: web::Path<Uuid>,
     input: web::Json<MoveCardRequest>,
 ) -> AppResult<HttpResponse> {
     let input = input.into_inner();
     let card_id = id.into_inner();
+
+    // Get the card before moving to know the from_column_id
+    let from_column_id =
+        if let Ok(Some(card)) = crate::models::Card::find_by_id(pool.get_ref(), card_id).await {
+            card.column_id
+        } else {
+            input.column_id // fallback, though this shouldn't happen
+        };
+
     let card =
         CardService::move_card(pool.get_ref(), card_id, input.column_id, input.position).await?;
 
     // Get the column to find the board_id
     if let Ok(Some(column)) = Column::find_by_id(pool.get_ref(), card.column_id).await {
-        // Broadcast card moved via WebSocket
-        log::info!(
-            "Broadcasting card move: {} to board: {}",
-            card.id,
-            column.board_id
-        );
-        let ws_message = WsMessage::new(
-            column.board_id,
-            WsMessageType::CardMoved {
-                id: card.id,
-                column_id: card.column_id,
-                position: card.position,
-            },
-        );
-        ws_server.do_send(Broadcast {
-            message: ws_message,
-        });
+        // Broadcast card moved via SSE
+        sse_manager
+            .broadcast(
+                column.board_id,
+                SseEvent::CardMoved {
+                    card_id: card.id,
+                    from_column_id,
+                    to_column_id: card.column_id,
+                    new_position: card.position,
+                },
+            )
+            .await;
     }
 
     Ok(HttpResponse::Ok().json(card))

@@ -1,10 +1,13 @@
 use actix_web::{HttpResponse, web};
 use sqlx::PgPool;
+use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::error::AppResult;
 use crate::models::{CreateBoardInput, UpdateBoardInput};
 use crate::services::BoardService;
+use crate::sse::events::SseEvent;
+use crate::sse::manager::SseManager;
 
 /// Create a new board
 pub async fn create_board(
@@ -54,11 +57,23 @@ pub async fn update_board_by_share_token(
 /// Update a board
 pub async fn update_board(
     pool: web::Data<PgPool>,
+    sse_manager: web::Data<Arc<SseManager>>,
     id: web::Path<Uuid>,
     input: web::Json<UpdateBoardInput>,
 ) -> AppResult<HttpResponse> {
-    let board =
-        BoardService::update_board(pool.get_ref(), id.into_inner(), input.into_inner()).await?;
+    let board_id = id.into_inner();
+    let board = BoardService::update_board(pool.get_ref(), board_id, input.into_inner()).await?;
+
+    // Broadcast board update via SSE
+    sse_manager
+        .broadcast(
+            board_id,
+            SseEvent::BoardUpdated {
+                board: board.clone(),
+            },
+        )
+        .await;
+
     Ok(HttpResponse::Ok().json(board))
 }
 

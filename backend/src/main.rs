@@ -1,4 +1,3 @@
-use actix::Actor;
 use actix_web::{App, HttpServer, middleware, web};
 use log::info;
 use std::io;
@@ -9,12 +8,11 @@ mod error;
 mod handlers;
 mod models;
 mod services;
+mod sse;
 mod utils;
-mod websocket;
 
 use config::Config;
 use db::init_pool;
-use websocket::WsServer;
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
@@ -47,9 +45,9 @@ async fn main() -> io::Result<()> {
         .expect("Failed to run database migrations");
     info!("Database migrations completed successfully");
 
-    // Start WebSocket server actor
-    let ws_server = WsServer::new().start();
-    info!("WebSocket server started");
+    // Initialize SSE manager
+    let sse_manager = sse::SseManager::new();
+    info!("SSE manager initialized");
 
     // Start HTTP server
     let config_clone = config.clone();
@@ -76,17 +74,15 @@ async fn main() -> io::Result<()> {
         App::new()
             // Share database pool across all handlers
             .app_data(web::Data::new(pool.clone()))
-            // Share WebSocket server across all handlers
-            .app_data(web::Data::new(ws_server.clone()))
+            // Share SSE manager across all handlers
+            .app_data(web::Data::new(sse_manager.clone()))
             // Enable logger middleware
             .wrap(middleware::Logger::default())
             // CORS middleware
             .wrap(cors)
             // Health check endpoint
             .route("/health", web::get().to(health_check))
-            // WebSocket endpoint
-            .route("/ws/{share_token}", web::get().to(websocket::ws_handler))
-            // Configure API routes
+            // Configure API routes (including SSE)
             .configure(handlers::configure_routes)
     })
     .bind((config.server_host.as_str(), config.server_port))?

@@ -9,7 +9,7 @@ import { ManageLabelsDialog } from "@/components/dialogs/manage-labels-dialog";
 import { ShareLink } from "@/components/shared/share-link";
 import { Toast } from "@/components/shared/toast";
 import { useBoard } from "@/hooks/use-board";
-import { useWebSocket } from "@/hooks/use-websocket";
+import { useSSE } from "@/hooks/use-sse";
 import { useBoardStore } from "@/store/board-store";
 
 interface BoardPageProps {
@@ -23,8 +23,8 @@ export default function BoardPage({ params }: BoardPageProps) {
   const { loadBoard } = useBoard();
   const { board, isLoading, error } = useBoardStore();
 
-  // Establish WebSocket connection
-  useWebSocket(shareToken);
+  // Establish SSE connection
+  useSSE(shareToken);
 
   // Load board data on mount
   useEffect(() => {
