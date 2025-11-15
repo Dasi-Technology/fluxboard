@@ -39,6 +39,14 @@ async fn main() -> io::Result<()> {
 
     info!("Database connection pool established");
 
+    // Run database migrations
+    info!("Running database migrations...");
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("Failed to run database migrations");
+    info!("Database migrations completed successfully");
+
     // Start WebSocket server actor
     let ws_server = WsServer::new().start();
     info!("WebSocket server started");
