@@ -82,7 +82,7 @@ export function Card({ card }: CardProps) {
       </div>
 
       {card.description && (
-        <div className="text-xs text-muted-foreground mt-2 line-clamp-3">
+        <div className="text-xs text-muted-foreground mt-2">
           <MarkdownRenderer content={card.description} />
         </div>
       )}
