@@ -173,12 +173,12 @@ export function Board() {
       >
         <div
           ref={boardRef}
-          className="flex-1 overflow-x-auto overflow-y-hidden relative"
+          className="flex-1 overflow-x-auto overflow-y-hidden relative h-full"
           onMouseMove={handleMouseMove}
           onClick={handleClick}
           onMouseDown={handleMouseDown}
         >
-          <div className="flex gap-4 p-6 h-full">
+          <div className="flex gap-4 p-6 h-full min-h-0">
             <SortableContext
               items={columnIds}
               strategy={horizontalListSortingStrategy}

@@ -78,7 +78,7 @@ export function Column({ column }: ColumnProps) {
     <div
       ref={setSortableRef}
       style={style}
-      className="flex-shrink-0 w-80 bg-muted/50 rounded-lg p-4 flex flex-col max-h-full"
+      className="flex-shrink-0 w-80 bg-muted/50 rounded-lg p-4 flex flex-col h-full"
     >
       <div
         {...attributes}
