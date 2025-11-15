@@ -11,6 +11,7 @@ import { Toast } from "@/components/shared/toast";
 import { useBoard } from "@/hooks/use-board";
 import { useSSE } from "@/hooks/use-sse";
 import { useBoardStore } from "@/store/board-store";
+import { addRecentBoard } from "@/lib/recent-boards";
 
 interface BoardPageProps {
   params: {
@@ -31,6 +32,16 @@ export default function BoardPage({ params }: BoardPageProps) {
     reset();
     loadBoard(shareToken);
   }, [shareToken, loadBoard, reset]);
+
+  // Save board to recent boards when successfully loaded
+  useEffect(() => {
+    if (board && shareToken && board.title) {
+      addRecentBoard({
+        shareToken,
+        name: board.title,
+      });
+    }
+  }, [board, shareToken]);
 
   // Show loader while loading or if we haven't loaded successfully yet
   if (isLoading || (!board && !error)) {
