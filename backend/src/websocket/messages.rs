@@ -5,7 +5,7 @@ use crate::models::{Board, Card, Column, Label};
 
 /// WebSocket message types for real-time updates
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", content = "data")]
+#[serde(tag = "type", content = "data", rename_all = "snake_case")]
 pub enum WsMessageType {
     // Board events
     BoardCreated(Board),
@@ -65,7 +65,9 @@ pub enum WsMessageType {
 /// WebSocket message wrapper
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WsMessage {
+    #[serde(skip_serializing)]
     pub board_id: Uuid,
+    #[serde(flatten)]
     pub message_type: WsMessageType,
 }
 

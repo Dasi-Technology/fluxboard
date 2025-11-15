@@ -29,6 +29,12 @@ export const useWebSocket = (shareToken: string | null) => {
 
     // Handle incoming messages
     const handleMessage = (message: WSMessage) => {
+      console.log(
+        "[useWebSocket] Handling message:",
+        message.type,
+        message.data
+      );
+
       switch (message.type) {
         case "board_updated": {
           const board = message.data as Board;
@@ -62,7 +68,20 @@ export const useWebSocket = (shareToken: string | null) => {
 
         case "card_updated": {
           const card = message.data as Card;
+          console.log("[useWebSocket] Updating card:", card.id);
           updateCard(card.id, card);
+          break;
+        }
+
+        case "card_moved": {
+          const moveData = message.data as {
+            id: string;
+            column_id: string;
+            position: number;
+          };
+          console.log("[useWebSocket] Moving card:", moveData);
+          // Move the card to the new column and position
+          moveCard(moveData.id, moveData.column_id, moveData.position);
           break;
         }
 
@@ -91,7 +110,7 @@ export const useWebSocket = (shareToken: string | null) => {
         }
 
         default:
-          console.warn("Unknown WebSocket message type:", message.type);
+          console.warn("[useWebSocket] Unknown message type:", message.type);
       }
     };
 

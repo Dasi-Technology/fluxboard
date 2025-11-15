@@ -8,6 +8,7 @@ export type WSMessageType =
   | "column_deleted"
   | "card_created"
   | "card_updated"
+  | "card_moved"
   | "card_deleted"
   | "label_created"
   | "label_updated"
@@ -39,29 +40,42 @@ export class WebSocketClient {
     const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080/ws";
     const url = `${wsUrl}/${this.shareToken}`;
 
+    console.log("[WebSocket] Attempting to connect to:", url);
+
     try {
       this.ws = new WebSocket(url);
+      console.log(
+        "[WebSocket] WebSocket object created, readyState:",
+        this.ws.readyState
+      );
 
       this.ws.onopen = () => {
-        console.log("WebSocket connected");
+        console.log("[WebSocket] Connection opened successfully!");
         this.reconnectAttempts = 0;
       };
 
       this.ws.onmessage = (event) => {
         try {
+          console.log("[WebSocket] Raw message received:", event.data);
           const message: WSMessage = JSON.parse(event.data);
+          console.log("[WebSocket] Parsed message:", message);
           this.handleMessage(message);
         } catch (error) {
-          console.error("Failed to parse WebSocket message:", error);
+          console.error("[WebSocket] Failed to parse message:", error);
         }
       };
 
       this.ws.onerror = (error) => {
-        console.error("WebSocket error:", error);
+        console.error("[WebSocket] Error occurred:", error);
       };
 
-      this.ws.onclose = () => {
-        console.log("WebSocket disconnected");
+      this.ws.onclose = (event) => {
+        console.log(
+          "[WebSocket] Connection closed. Code:",
+          event.code,
+          "Reason:",
+          event.reason
+        );
         this.attemptReconnect();
       };
     } catch (error) {
