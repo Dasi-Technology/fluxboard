@@ -122,9 +122,18 @@ export function Column({ column, isReadOnly = false }: ColumnProps) {
             <Card key={card.id} card={card} isReadOnly={isReadOnly} />
           ))}
         </SortableContext>
+        {!isReadOnly && (
+          <div className="md:hidden">
+            <AddCard columnId={column.id} />
+          </div>
+        )}
       </div>
 
-      {!isReadOnly && <AddCard columnId={column.id} />}
+      {!isReadOnly && (
+        <div className="hidden md:block">
+          <AddCard columnId={column.id} />
+        </div>
+      )}
     </div>
   );
 }

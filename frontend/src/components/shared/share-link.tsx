@@ -26,7 +26,7 @@ export function ShareLink({ shareToken, isLocked = false }: ShareLinkProps) {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="md:space-y-2">
       <Label htmlFor="share-link" className="hidden md:block">
         Share Link
       </Label>
@@ -35,7 +35,7 @@ export function ShareLink({ shareToken, isLocked = false }: ShareLinkProps) {
           id="share-link"
           value={shareUrl}
           readOnly
-          className="flex-1 text-xs md:text-sm"
+          className="hidden md:flex flex-1 text-xs md:text-sm"
           onClick={(e) => e.currentTarget.select()}
         />
         <Button
