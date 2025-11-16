@@ -12,4 +12,4 @@ pub mod label;
 pub use board::{Board, BoardWithRelations, CreateBoardInput, UpdateBoardInput};
 pub use card::{Card, CreateCardInput, UpdateCardInput};
 pub use column::{Column, CreateColumnInput, UpdateColumnInput};
-pub use label::{CreateLabelInput, Label, UpdateLabelInput};
+pub use label::{BoardLabel, CardLabel, CreateBoardLabelInput, UpdateBoardLabelInput};

@@ -11,7 +11,10 @@ import { Toast } from "@/components/shared/toast";
 import { useBoard } from "@/hooks/use-board";
 import { useSSE } from "@/hooks/use-sse";
 import { useBoardStore } from "@/store/board-store";
+import { useUIStore } from "@/store/ui-store";
 import { addRecentBoard } from "@/lib/recent-boards";
+import { Button } from "@/components/ui/button";
+import { Tag } from "lucide-react";
 
 interface BoardPageProps {
   params: {
@@ -23,6 +26,7 @@ export default function BoardPage({ params }: BoardPageProps) {
   const { shareToken } = params;
   const { loadBoard } = useBoard();
   const { board, isLoading, error, reset } = useBoardStore();
+  const { openManageLabelsDialog } = useUIStore();
 
   // Establish SSE connection
   useSSE(shareToken);
@@ -91,8 +95,19 @@ export default function BoardPage({ params }: BoardPageProps) {
                 Real-time collaborative board
               </p>
             </div>
-            <div className="w-auto md:w-96 flex-shrink-0">
-              <ShareLink shareToken={shareToken} />
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={openManageLabelsDialog}
+                className="flex items-center gap-2"
+              >
+                <Tag className="h-4 w-4" />
+                <span className="hidden sm:inline">Manage Labels</span>
+              </Button>
+              <div className="w-auto md:w-96 flex-shrink-0">
+                <ShareLink shareToken={shareToken} />
+              </div>
             </div>
           </div>
         </header>

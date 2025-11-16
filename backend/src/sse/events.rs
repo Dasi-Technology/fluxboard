@@ -47,21 +47,23 @@ pub enum SseEvent {
         new_position: i32,
     },
 
-    // Label events
-    LabelCreated {
-        label: crate::models::label::Label,
+    // Board label events
+    BoardLabelCreated {
+        label: crate::models::label::BoardLabel,
     },
-    LabelUpdated {
-        label: crate::models::label::Label,
+    BoardLabelUpdated {
+        label: crate::models::label::BoardLabel,
     },
-    LabelDeleted {
+    BoardLabelDeleted {
         label_id: Uuid,
     },
-    LabelAssigned {
+
+    // Card label assignment events
+    CardLabelAssigned {
         card_id: Uuid,
-        label_id: Uuid,
+        label: crate::models::label::BoardLabel,
     },
-    LabelUnassigned {
+    CardLabelUnassigned {
         card_id: Uuid,
         label_id: Uuid,
     },
@@ -81,11 +83,11 @@ impl SseEvent {
             SseEvent::CardDeleted { .. } => "card:deleted",
             SseEvent::CardMoved { .. } => "card:moved",
             SseEvent::CardReordered { .. } => "card:reordered",
-            SseEvent::LabelCreated { .. } => "label:created",
-            SseEvent::LabelUpdated { .. } => "label:updated",
-            SseEvent::LabelDeleted { .. } => "label:deleted",
-            SseEvent::LabelAssigned { .. } => "label:assigned",
-            SseEvent::LabelUnassigned { .. } => "label:unassigned",
+            SseEvent::BoardLabelCreated { .. } => "board_label:created",
+            SseEvent::BoardLabelUpdated { .. } => "board_label:updated",
+            SseEvent::BoardLabelDeleted { .. } => "board_label:deleted",
+            SseEvent::CardLabelAssigned { .. } => "card_label:assigned",
+            SseEvent::CardLabelUnassigned { .. } => "card_label:unassigned",
         }
     }
 

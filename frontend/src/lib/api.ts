@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from "axios";
-import type { Board, Column, Card, Label } from "./types";
+import type { Board, Column, Card, BoardLabel } from "./types";
 
 // Create axios instance with base configuration
 const api: AxiosInstance = axios.create({
@@ -113,13 +113,63 @@ export const deleteCard = async (cardId: string): Promise<void> => {
   await api.delete(`/cards/${cardId}`);
 };
 
-// Label API endpoints
+// Board Label API endpoints
+export const getBoardLabels = async (
+  boardId: string
+): Promise<BoardLabel[]> => {
+  const response = await api.get<BoardLabel[]>(`/boards/${boardId}/labels`);
+  return response.data;
+};
+
+export const createBoardLabel = async (
+  boardId: string,
+  name: string,
+  color: string
+): Promise<BoardLabel> => {
+  const response = await api.post<BoardLabel>(`/boards/${boardId}/labels`, {
+    name,
+    color,
+  });
+  return response.data;
+};
+
+export const updateBoardLabel = async (
+  labelId: string,
+  updates: Partial<Pick<BoardLabel, "name" | "color">>
+): Promise<BoardLabel> => {
+  const response = await api.put<BoardLabel>(
+    `/boards/labels/${labelId}`,
+    updates
+  );
+  return response.data;
+};
+
+export const deleteBoardLabel = async (labelId: string): Promise<void> => {
+  await api.delete(`/boards/labels/${labelId}`);
+};
+
+// Card Label Assignment endpoints
+export const assignLabelToCard = async (
+  cardId: string,
+  labelId: string
+): Promise<void> => {
+  await api.post(`/cards/${cardId}/labels/${labelId}`);
+};
+
+export const unassignLabelFromCard = async (
+  cardId: string,
+  labelId: string
+): Promise<void> => {
+  await api.delete(`/cards/${cardId}/labels/${labelId}`);
+};
+
+// Legacy label endpoints (kept for backward compatibility during migration)
 export const createLabel = async (
   cardId: string,
   name: string,
   color: string
-): Promise<Label> => {
-  const response = await api.post<Label>(`/cards/${cardId}/labels`, {
+): Promise<BoardLabel> => {
+  const response = await api.post<BoardLabel>(`/cards/${cardId}/labels`, {
     name,
     color,
   });
@@ -128,9 +178,9 @@ export const createLabel = async (
 
 export const updateLabel = async (
   labelId: string,
-  updates: Partial<Pick<Label, "name" | "color">>
-): Promise<Label> => {
-  const response = await api.put<Label>(`/labels/${labelId}`, updates);
+  updates: Partial<Pick<BoardLabel, "name" | "color">>
+): Promise<BoardLabel> => {
+  const response = await api.put<BoardLabel>(`/labels/${labelId}`, updates);
   return response.data;
 };
 

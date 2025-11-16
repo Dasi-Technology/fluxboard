@@ -74,15 +74,31 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
                 "/cards/ai/generate-description",
                 web::post().to(card_handlers::generate_description),
             )
-            // Label routes
+            // Board label management routes
             .route(
-                "/cards/{card_id}/labels",
-                web::post().to(label_handlers::create_label),
+                "/boards/{board_id}/labels",
+                web::get().to(label_handlers::list_board_labels),
             )
-            .route("/labels/{id}", web::put().to(label_handlers::update_label))
             .route(
-                "/labels/{id}",
-                web::delete().to(label_handlers::delete_label),
+                "/boards/{board_id}/labels",
+                web::post().to(label_handlers::create_board_label),
+            )
+            .route(
+                "/boards/labels/{label_id}",
+                web::put().to(label_handlers::update_board_label),
+            )
+            .route(
+                "/boards/labels/{label_id}",
+                web::delete().to(label_handlers::delete_board_label),
+            )
+            // Card label assignment routes
+            .route(
+                "/cards/{card_id}/labels/{label_id}",
+                web::post().to(label_handlers::assign_label_to_card),
+            )
+            .route(
+                "/cards/{card_id}/labels/{label_id}",
+                web::delete().to(label_handlers::unassign_label_from_card),
             ),
     );
 }

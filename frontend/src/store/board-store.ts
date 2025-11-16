@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Board, Column, Card, Label } from "@/lib/types";
+import type { Board, Column, Card, BoardLabel } from "@/lib/types";
 
 interface BoardStore {
   board: Board | null;
@@ -27,10 +27,19 @@ interface BoardStore {
   deleteCard: (cardId: string) => void;
   moveCard: (cardId: string, newColumnId: string, newPosition: number) => void;
 
-  // Label operations
-  addLabel: (cardId: string, label: Label) => void;
-  updateLabel: (labelId: string, updates: Partial<Label>) => void;
+  // Board Label operations (new)
+  addBoardLabel: (label: BoardLabel) => void;
+  updateBoardLabel: (labelId: string, updates: Partial<BoardLabel>) => void;
+  deleteBoardLabel: (labelId: string) => void;
+
+  // Card Label operations (legacy - kept for compatibility)
+  addLabel: (cardId: string, label: BoardLabel) => void;
+  updateLabel: (labelId: string, updates: Partial<BoardLabel>) => void;
   deleteLabel: (labelId: string) => void;
+
+  // Card-Label assignment operations (new)
+  assignLabelToCard: (cardId: string, labelId: string) => void;
+  unassignLabelFromCard: (cardId: string, labelId: string) => void;
 }
 
 export const useBoardStore = create<BoardStore>((set) => ({
@@ -330,6 +339,137 @@ export const useBoardStore = create<BoardStore>((set) => ({
       };
     }),
 
+  // Board label operations
+  addBoardLabel: (label) =>
+    set((state) => {
+      if (!state.board) return state;
+      // Check if label already exists
+      const existingLabel = state.board.labels?.find((l) => l.id === label.id);
+      if (existingLabel) {
+        console.log(
+          "[BoardStore] Board label already exists, skipping duplicate:",
+          label.id
+        );
+        return state;
+      }
+      const labels = [...(state.board.labels || []), label];
+      return {
+        board: { ...state.board, labels },
+      };
+    }),
+
+  updateBoardLabel: (labelId, updates) =>
+    set((state) => {
+      if (!state.board?.labels) return state;
+      const labels = state.board.labels.map((label) =>
+        label.id === labelId ? { ...label, ...updates } : label
+      );
+      return {
+        board: { ...state.board, labels },
+      };
+    }),
+
+  deleteBoardLabel: (labelId) =>
+    set((state) => {
+      if (!state.board) return state;
+
+      // Remove label from board labels
+      const labels = state.board.labels?.filter(
+        (label) => label.id !== labelId
+      );
+
+      // Remove label from all cards that have it
+      const columns = state.board.columns?.map((col) => ({
+        ...col,
+        cards: col.cards?.map((card) => ({
+          ...card,
+          labels: card.labels?.filter((label) => label.id !== labelId),
+        })),
+      }));
+
+      return {
+        board: { ...state.board, labels, columns },
+      };
+    }),
+
+  // Card-label assignment operations
+  assignLabelToCard: (cardId, labelId) =>
+    set((state) => {
+      if (!state.board?.columns) return state;
+
+      // Find the label from board labels
+      const label = state.board.labels?.find((l) => l.id === labelId);
+      if (!label) {
+        console.warn("[BoardStore] Label not found:", labelId);
+        return state;
+      }
+
+      let labelAssigned = false;
+      const columns = state.board.columns.map((col) => {
+        const hasCard = col.cards?.some((card) => card.id === cardId);
+        if (!hasCard) return col;
+
+        const cards = col.cards?.map((card) => {
+          if (card.id === cardId) {
+            // Check if label already assigned
+            const existingLabel = card.labels?.find((l) => l.id === labelId);
+            if (existingLabel) {
+              console.log(
+                "[BoardStore] Label already assigned to card, skipping:",
+                labelId
+              );
+              return card;
+            }
+            labelAssigned = true;
+            return { ...card, labels: [...(card.labels || []), label] };
+          }
+          return card;
+        });
+
+        return labelAssigned ? { ...col, cards } : col;
+      });
+
+      return labelAssigned
+        ? {
+            board: { ...state.board, columns },
+          }
+        : state;
+    }),
+
+  unassignLabelFromCard: (cardId, labelId) =>
+    set((state) => {
+      if (!state.board?.columns) return state;
+
+      let labelUnassigned = false;
+      const columns = state.board.columns.map((col) => {
+        const hasCard = col.cards?.some((card) => card.id === cardId);
+        if (!hasCard) return col;
+
+        const cards = col.cards?.map((card) => {
+          if (card.id === cardId) {
+            const labels = card.labels?.filter((label) => {
+              if (label.id === labelId) {
+                labelUnassigned = true;
+                return false;
+              }
+              return true;
+            });
+            return { ...card, labels };
+          }
+          return card;
+        });
+
+        return { ...col, cards };
+      });
+
+      return labelUnassigned
+        ? {
+            board: { ...state.board, columns },
+          }
+        : state;
+    }),
+
+  // Legacy label operations (for backward compatibility)
   addLabel: (cardId, label) =>
     set((state) => {
       if (!state.board?.columns) return state;

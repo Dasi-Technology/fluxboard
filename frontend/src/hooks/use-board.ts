@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { useBoardStore } from "@/store/board-store";
 import { useUIStore } from "@/store/ui-store";
 import * as api from "@/lib/api";
-import type { Card, Column, Label } from "@/lib/types";
+import type { Card, Column, BoardLabel } from "@/lib/types";
 
 export const useBoard = () => {
   const {
@@ -21,6 +21,11 @@ export const useBoard = () => {
     updateCard,
     deleteCard,
     moveCard,
+    addBoardLabel,
+    updateBoardLabel,
+    deleteBoardLabel,
+    assignLabelToCard,
+    unassignLabelFromCard,
     addLabel,
     updateLabel,
     deleteLabel,
@@ -344,8 +349,8 @@ export const useBoard = () => {
 
   // Update label
   const handleUpdateLabel = useCallback(
-    async (labelId: string, updates: Partial<Label>) => {
-      let originalLabel: Label | undefined;
+    async (labelId: string, updates: Partial<BoardLabel>) => {
+      let originalLabel: BoardLabel | undefined;
       board?.columns?.forEach((col) => {
         col.cards?.forEach((card) => {
           const label = card.labels?.find((l) => l.id === labelId);
@@ -372,7 +377,7 @@ export const useBoard = () => {
   // Delete label
   const handleDeleteLabel = useCallback(
     async (labelId: string) => {
-      let originalLabel: Label | undefined;
+      let originalLabel: BoardLabel | undefined;
       let originalCardId: string | undefined;
       board?.columns?.forEach((col) => {
         col.cards?.forEach((card) => {
@@ -400,6 +405,99 @@ export const useBoard = () => {
     [board, deleteLabel, addLabel, showToast]
   );
 
+  // Board Label operations (new)
+  const createBoardLabel = useCallback(
+    async (name: string, color: string) => {
+      if (!board) return;
+      try {
+        const newLabel = await api.createBoardLabel(board.id, name, color);
+        addBoardLabel(newLabel);
+        showToast("Label created", "success");
+        return newLabel;
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to create label";
+        showToast(message, "error");
+        throw err;
+      }
+    },
+    [board, addBoardLabel, showToast]
+  );
+
+  const handleUpdateBoardLabel = useCallback(
+    async (labelId: string, updates: Partial<BoardLabel>) => {
+      const originalLabel = board?.labels?.find((l) => l.id === labelId);
+      if (!originalLabel) return;
+
+      try {
+        updateBoardLabel(labelId, updates);
+        await api.updateBoardLabel(labelId, updates);
+        showToast("Label updated", "success");
+      } catch (err) {
+        updateBoardLabel(labelId, originalLabel);
+        const message =
+          err instanceof Error ? err.message : "Failed to update label";
+        showToast(message, "error");
+        throw err;
+      }
+    },
+    [board, updateBoardLabel, showToast]
+  );
+
+  const handleDeleteBoardLabel = useCallback(
+    async (labelId: string) => {
+      const originalLabel = board?.labels?.find((l) => l.id === labelId);
+      if (!originalLabel) return;
+
+      try {
+        deleteBoardLabel(labelId);
+        await api.deleteBoardLabel(labelId);
+        showToast("Label deleted", "success");
+      } catch (err) {
+        addBoardLabel(originalLabel);
+        const message =
+          err instanceof Error ? err.message : "Failed to delete label";
+        showToast(message, "error");
+        throw err;
+      }
+    },
+    [board, deleteBoardLabel, addBoardLabel, showToast]
+  );
+
+  const handleAssignLabelToCard = useCallback(
+    async (cardId: string, labelId: string) => {
+      try {
+        assignLabelToCard(cardId, labelId);
+        await api.assignLabelToCard(cardId, labelId);
+        showToast("Label assigned", "success");
+      } catch (err) {
+        unassignLabelFromCard(cardId, labelId);
+        const message =
+          err instanceof Error ? err.message : "Failed to assign label";
+        showToast(message, "error");
+        throw err;
+      }
+    },
+    [assignLabelToCard, unassignLabelFromCard, showToast]
+  );
+
+  const handleUnassignLabelFromCard = useCallback(
+    async (cardId: string, labelId: string) => {
+      try {
+        unassignLabelFromCard(cardId, labelId);
+        await api.unassignLabelFromCard(cardId, labelId);
+        showToast("Label unassigned", "success");
+      } catch (err) {
+        assignLabelToCard(cardId, labelId);
+        const message =
+          err instanceof Error ? err.message : "Failed to unassign label";
+        showToast(message, "error");
+        throw err;
+      }
+    },
+    [unassignLabelFromCard, assignLabelToCard, showToast]
+  );
+
   return {
     board,
     isLoading,
@@ -415,6 +513,13 @@ export const useBoard = () => {
     updateCard: handleUpdateCard,
     deleteCard: handleDeleteCard,
     moveCard: handleMoveCard,
+    // Board label operations
+    createBoardLabel,
+    updateBoardLabel: handleUpdateBoardLabel,
+    deleteBoardLabel: handleDeleteBoardLabel,
+    assignLabelToCard: handleAssignLabelToCard,
+    unassignLabelFromCard: handleUnassignLabelFromCard,
+    // Legacy label operations
     createLabel,
     updateLabel: handleUpdateLabel,
     deleteLabel: handleDeleteLabel,

@@ -32,7 +32,7 @@ interface UIStore {
   openEditColumnDialog: (columnId: string) => void;
   closeEditColumnDialog: () => void;
 
-  openManageLabelsDialog: (cardId: string) => void;
+  openManageLabelsDialog: () => void;
   closeManageLabelsDialog: () => void;
 
   showToast: (message: string, type: "success" | "error" | "info") => void;
@@ -72,8 +72,7 @@ export const useUIStore = create<UIStore>((set) => ({
   closeEditColumnDialog: () =>
     set({ isEditColumnDialogOpen: false, selectedColumnId: null }),
 
-  openManageLabelsDialog: (cardId) =>
-    set({ isManageLabelsDialogOpen: true, selectedCardId: cardId }),
+  openManageLabelsDialog: () => set({ isManageLabelsDialogOpen: true }),
   closeManageLabelsDialog: () => set({ isManageLabelsDialogOpen: false }),
 
   // Toast actions

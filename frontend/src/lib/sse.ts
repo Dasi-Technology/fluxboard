@@ -14,11 +14,11 @@ export type SSEEventType =
   | "card:deleted"
   | "card:moved"
   | "card:reordered"
-  | "label:created"
-  | "label:updated"
-  | "label:deleted"
-  | "label:assigned"
-  | "label:unassigned";
+  | "board_label:created"
+  | "board_label:updated"
+  | "board_label:deleted"
+  | "card_label:assigned"
+  | "card_label:unassigned";
 
 /**
  * SSE event data structures matching backend event payloads
@@ -79,29 +79,29 @@ export interface SSECardReorderedEvent {
   new_position: number;
 }
 
-export interface SSELabelCreatedEvent {
-  type: "label_created";
+export interface SSEBoardLabelCreatedEvent {
+  type: "board_label_created";
   label: Label;
 }
 
-export interface SSELabelUpdatedEvent {
-  type: "label_updated";
+export interface SSEBoardLabelUpdatedEvent {
+  type: "board_label_updated";
   label: Label;
 }
 
-export interface SSELabelDeletedEvent {
-  type: "label_deleted";
+export interface SSEBoardLabelDeletedEvent {
+  type: "board_label_deleted";
   label_id: string;
 }
 
-export interface SSELabelAssignedEvent {
-  type: "label_assigned";
+export interface SSECardLabelAssignedEvent {
+  type: "card_label_assigned";
   card_id: string;
-  label_id: string;
+  label: Label;
 }
 
-export interface SSELabelUnassignedEvent {
-  type: "label_unassigned";
+export interface SSECardLabelUnassignedEvent {
+  type: "card_label_unassigned";
   card_id: string;
   label_id: string;
 }
@@ -120,11 +120,11 @@ export type SSEEvent =
   | SSECardDeletedEvent
   | SSECardMovedEvent
   | SSECardReorderedEvent
-  | SSELabelCreatedEvent
-  | SSELabelUpdatedEvent
-  | SSELabelDeletedEvent
-  | SSELabelAssignedEvent
-  | SSELabelUnassignedEvent;
+  | SSEBoardLabelCreatedEvent
+  | SSEBoardLabelUpdatedEvent
+  | SSEBoardLabelDeletedEvent
+  | SSECardLabelAssignedEvent
+  | SSECardLabelUnassignedEvent;
 
 /**
  * Event handler type for SSE events
@@ -257,21 +257,23 @@ export class SSEClient {
       this.handleEvent("card:reordered", e);
     });
 
-    // Label events
-    this.eventSource.addEventListener("label:created", (e) => {
-      this.handleEvent("label:created", e);
+    // Board label events
+    this.eventSource.addEventListener("board_label:created", (e) => {
+      this.handleEvent("board_label:created", e);
     });
-    this.eventSource.addEventListener("label:updated", (e) => {
-      this.handleEvent("label:updated", e);
+    this.eventSource.addEventListener("board_label:updated", (e) => {
+      this.handleEvent("board_label:updated", e);
     });
-    this.eventSource.addEventListener("label:deleted", (e) => {
-      this.handleEvent("label:deleted", e);
+    this.eventSource.addEventListener("board_label:deleted", (e) => {
+      this.handleEvent("board_label:deleted", e);
     });
-    this.eventSource.addEventListener("label:assigned", (e) => {
-      this.handleEvent("label:assigned", e);
+
+    // Card label assignment events
+    this.eventSource.addEventListener("card_label:assigned", (e) => {
+      this.handleEvent("card_label:assigned", e);
     });
-    this.eventSource.addEventListener("label:unassigned", (e) => {
-      this.handleEvent("label:unassigned", e);
+    this.eventSource.addEventListener("card_label:unassigned", (e) => {
+      this.handleEvent("card_label:unassigned", e);
     });
   }
 

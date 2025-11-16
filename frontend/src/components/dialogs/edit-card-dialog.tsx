@@ -13,8 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Plus, X, Eye, Code, Sparkles, List, FileText } from "lucide-react";
+import { Eye, Code, List, FileText } from "lucide-react";
 import { useUIStore } from "@/store/ui-store";
 import { useBoardStore } from "@/store/board-store";
 import { useBoard } from "@/hooks/use-board";
@@ -23,14 +22,10 @@ import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 import { generateDescription, type DescriptionFormat } from "@/lib/api";
 
 export function EditCardDialog() {
-  const {
-    isEditCardDialogOpen,
-    selectedCardId,
-    closeEditCardDialog,
-    openManageLabelsDialog,
-  } = useUIStore();
+  const { isEditCardDialogOpen, selectedCardId, closeEditCardDialog } =
+    useUIStore();
   const { board } = useBoardStore();
-  const { updateCard, deleteLabel } = useBoard();
+  const { updateCard, assignLabelToCard, unassignLabelFromCard } = useBoard();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -72,17 +67,19 @@ export function EditCardDialog() {
     }
   };
 
-  const handleRemoveLabel = async (labelId: string) => {
-    try {
-      await deleteLabel(labelId);
-    } catch (error) {
-      console.error("Failed to remove label:", error);
-    }
-  };
+  const handleToggleLabel = async (labelId: string) => {
+    if (!selectedCardId) return;
 
-  const handleManageLabels = () => {
-    if (selectedCardId) {
-      openManageLabelsDialog(selectedCardId);
+    const isAssigned = card?.labels?.some((l) => l.id === labelId);
+
+    try {
+      if (isAssigned) {
+        await unassignLabelFromCard(selectedCardId, labelId);
+      } else {
+        await assignLabelToCard(selectedCardId, labelId);
+      }
+    } catch (error) {
+      console.error("Failed to toggle label:", error);
     }
   };
 
@@ -209,46 +206,38 @@ export function EditCardDialog() {
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label>Labels</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleManageLabels}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Manage Labels
-                </Button>
-              </div>
-              {card?.labels && card.labels.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {card.labels.map((label) => (
-                    <Badge
-                      key={label.id}
-                      variant="secondary"
-                      className="text-sm pl-3 pr-1"
-                      style={{
-                        backgroundColor: label.color,
-                        color: getContrastColor(label.color),
-                      }}
-                    >
-                      {label.name}
-                      <Button
+              <Label>Labels</Label>
+              {board?.labels && board.labels.length > 0 ? (
+                <div className="flex flex-wrap gap-3 mt-2">
+                  {board.labels.map((label) => {
+                    const isAssigned = card?.labels?.some(
+                      (l) => l.id === label.id
+                    );
+                    return (
+                      <button
+                        key={label.id}
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-4 w-4 ml-1 hover:bg-transparent"
-                        onClick={() => handleRemoveLabel(label.id)}
+                        onClick={() => handleToggleLabel(label.id)}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                          isAssigned
+                            ? "ring-2 ring-offset-1 ring-foreground scale-105"
+                            : "opacity-60 hover:opacity-100"
+                        }`}
+                        style={{
+                          backgroundColor: label.color,
+                          color: getContrastColor(label.color),
+                        }}
+                        disabled={isLoading}
                       >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </Badge>
-                  ))}
+                        {label.name}
+                        {isAssigned && <span className="ml-1.5">✓</span>}
+                      </button>
+                    );
+                  })}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">
-                  No labels yet. Click "Manage Labels" to add some.
+                <p className="text-sm text-muted-foreground mt-2">
+                  No labels available. Create labels from the board menu.
                 </p>
               )}
             </div>

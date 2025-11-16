@@ -9,6 +9,7 @@ export interface Board {
   created_at: string;
   updated_at: string;
   columns?: Column[];
+  labels?: BoardLabel[];
 }
 
 export interface Column {
@@ -29,17 +30,20 @@ export interface Card {
   position: number;
   created_at: string;
   updated_at: string;
-  labels?: Label[];
+  labels?: BoardLabel[];
 }
 
-export interface Label {
+export interface BoardLabel {
   id: string;
-  card_id: string;
+  board_id: string;
   name: string;
   color: string;
   created_at: string;
   updated_at: string;
 }
+
+// Keep Label as alias for backward compatibility during transition
+export type Label = BoardLabel;
 
 /**
  * API Request/Response types

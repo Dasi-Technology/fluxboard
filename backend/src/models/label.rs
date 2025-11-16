@@ -3,49 +3,58 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-/// Label model representing a label attached to a card
+/// Board-level label model (replaces card-level Label)
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
-pub struct Label {
+pub struct BoardLabel {
     pub id: Uuid,
-    pub card_id: Uuid,
+    pub board_id: Uuid,
     pub name: String,
     pub color: String,
     pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
-/// Input data for creating a new label
-#[derive(Debug, Deserialize)]
-pub struct CreateLabelInput {
+/// Card-label assignment (junction table)
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct CardLabel {
     pub card_id: Uuid,
+    pub label_id: Uuid,
+    pub created_at: DateTime<Utc>,
+}
+
+/// Input data for creating a new board label
+#[derive(Debug, Deserialize)]
+pub struct CreateBoardLabelInput {
+    pub board_id: Uuid,
     pub name: String,
     pub color: String,
 }
 
-/// Input data for updating a label
+/// Input data for updating a board label
 #[derive(Debug, Deserialize)]
-pub struct UpdateLabelInput {
+pub struct UpdateBoardLabelInput {
     pub name: Option<String>,
     pub color: Option<String>,
 }
 
-impl Label {
-    /// Create a new label
+impl BoardLabel {
+    /// Create a new board label
     ///
     /// # Arguments
     /// * `pool` - Database connection pool
     /// * `input` - Label creation data
     ///
     /// # Returns
-    /// * `Result<Label, sqlx::Error>` - Created label or error
-    pub async fn create(pool: &PgPool, input: CreateLabelInput) -> Result<Self, sqlx::Error> {
+    /// * `Result<BoardLabel, sqlx::Error>` - Created label or error
+    pub async fn create(pool: &PgPool, input: CreateBoardLabelInput) -> Result<Self, sqlx::Error> {
         let label = sqlx::query_as!(
-            Label,
+            BoardLabel,
             r#"
-            INSERT INTO labels (card_id, name, color)
+            INSERT INTO board_labels (board_id, name, color)
             VALUES ($1, $2, $3)
-            RETURNING id, card_id, name, color, created_at
+            RETURNING id, board_id, name, color, created_at, updated_at
             "#,
-            input.card_id,
+            input.board_id,
             input.name,
             input.color
         )
@@ -55,20 +64,20 @@ impl Label {
         Ok(label)
     }
 
-    /// Find a label by ID
+    /// Find a board label by ID
     ///
     /// # Arguments
     /// * `pool` - Database connection pool
     /// * `id` - Label UUID
     ///
     /// # Returns
-    /// * `Result<Option<Label>, sqlx::Error>` - Found label or None
+    /// * `Result<Option<BoardLabel>, sqlx::Error>` - Found label or None
     pub async fn find_by_id(pool: &PgPool, id: Uuid) -> Result<Option<Self>, sqlx::Error> {
         let label = sqlx::query_as!(
-            Label,
+            BoardLabel,
             r#"
-            SELECT id, card_id, name, color, created_at
-            FROM labels
+            SELECT id, board_id, name, color, created_at, updated_at
+            FROM board_labels
             WHERE id = $1
             "#,
             id
@@ -79,31 +88,6 @@ impl Label {
         Ok(label)
     }
 
-    /// Find all labels for a card
-    ///
-    /// # Arguments
-    /// * `pool` - Database connection pool
-    /// * `card_id` - Card UUID
-    ///
-    /// # Returns
-    /// * `Result<Vec<Label>, sqlx::Error>` - List of labels for the card
-    pub async fn find_by_card_id(pool: &PgPool, card_id: Uuid) -> Result<Vec<Self>, sqlx::Error> {
-        let labels = sqlx::query_as!(
-            Label,
-            r#"
-            SELECT id, card_id, name, color, created_at
-            FROM labels
-            WHERE card_id = $1
-            ORDER BY created_at ASC
-            "#,
-            card_id
-        )
-        .fetch_all(pool)
-        .await?;
-
-        Ok(labels)
-    }
-
     /// Find all labels for a board
     ///
     /// # Arguments
@@ -111,17 +95,15 @@ impl Label {
     /// * `board_id` - Board UUID
     ///
     /// # Returns
-    /// * `Result<Vec<Label>, sqlx::Error>` - List of all labels in the board
+    /// * `Result<Vec<BoardLabel>, sqlx::Error>` - List of all labels for the board
     pub async fn find_by_board_id(pool: &PgPool, board_id: Uuid) -> Result<Vec<Self>, sqlx::Error> {
         let labels = sqlx::query_as!(
-            Label,
+            BoardLabel,
             r#"
-            SELECT l.id, l.card_id, l.name, l.color, l.created_at
-            FROM labels l
-            INNER JOIN cards c ON l.card_id = c.id
-            INNER JOIN columns col ON c.column_id = col.id
-            WHERE col.board_id = $1
-            ORDER BY l.created_at ASC
+            SELECT id, board_id, name, color, created_at, updated_at
+            FROM board_labels
+            WHERE board_id = $1
+            ORDER BY created_at ASC
             "#,
             board_id
         )
@@ -131,7 +113,33 @@ impl Label {
         Ok(labels)
     }
 
-    /// Update a label
+    /// Find all labels assigned to a specific card
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `card_id` - Card UUID
+    ///
+    /// # Returns
+    /// * `Result<Vec<BoardLabel>, sqlx::Error>` - List of labels assigned to the card
+    pub async fn find_by_card_id(pool: &PgPool, card_id: Uuid) -> Result<Vec<Self>, sqlx::Error> {
+        let labels = sqlx::query_as!(
+            BoardLabel,
+            r#"
+            SELECT bl.id, bl.board_id, bl.name, bl.color, bl.created_at, bl.updated_at
+            FROM board_labels bl
+            INNER JOIN card_labels cl ON bl.id = cl.label_id
+            WHERE cl.card_id = $1
+            ORDER BY bl.created_at ASC
+            "#,
+            card_id
+        )
+        .fetch_all(pool)
+        .await?;
+
+        Ok(labels)
+    }
+
+    /// Update a board label
     ///
     /// # Arguments
     /// * `pool` - Database connection pool
@@ -139,21 +147,21 @@ impl Label {
     /// * `input` - Label update data
     ///
     /// # Returns
-    /// * `Result<Option<Label>, sqlx::Error>` - Updated label or None if not found
+    /// * `Result<Option<BoardLabel>, sqlx::Error>` - Updated label or None if not found
     pub async fn update(
         pool: &PgPool,
         id: Uuid,
-        input: UpdateLabelInput,
+        input: UpdateBoardLabelInput,
     ) -> Result<Option<Self>, sqlx::Error> {
         let label = sqlx::query_as!(
-            Label,
+            BoardLabel,
             r#"
-            UPDATE labels
-            SET 
+            UPDATE board_labels
+            SET
                 name = COALESCE($2, name),
                 color = COALESCE($3, color)
             WHERE id = $1
-            RETURNING id, card_id, name, color, created_at
+            RETURNING id, board_id, name, color, created_at, updated_at
             "#,
             id,
             input.name,
@@ -165,7 +173,7 @@ impl Label {
         Ok(label)
     }
 
-    /// Delete a label
+    /// Delete a board label
     ///
     /// # Arguments
     /// * `pool` - Database connection pool
@@ -176,7 +184,7 @@ impl Label {
     pub async fn delete(pool: &PgPool, id: Uuid) -> Result<bool, sqlx::Error> {
         let result = sqlx::query!(
             r#"
-            DELETE FROM labels
+            DELETE FROM board_labels
             WHERE id = $1
             "#,
             id
@@ -186,26 +194,85 @@ impl Label {
 
         Ok(result.rows_affected() > 0)
     }
+}
 
-    /// Delete all labels for a card
+impl CardLabel {
+    /// Assign a label to a card
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `card_id` - Card UUID
+    /// * `label_id` - Label UUID
+    ///
+    /// # Returns
+    /// * `Result<CardLabel, sqlx::Error>` - Created assignment or error
+    pub async fn assign(pool: &PgPool, card_id: Uuid, label_id: Uuid) -> Result<Self, sqlx::Error> {
+        let assignment = sqlx::query_as!(
+            CardLabel,
+            r#"
+            INSERT INTO card_labels (card_id, label_id)
+            VALUES ($1, $2)
+            ON CONFLICT (card_id, label_id) DO NOTHING
+            RETURNING card_id, label_id, created_at
+            "#,
+            card_id,
+            label_id
+        )
+        .fetch_one(pool)
+        .await?;
+
+        Ok(assignment)
+    }
+
+    /// Unassign a label from a card
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `card_id` - Card UUID
+    /// * `label_id` - Label UUID
+    ///
+    /// # Returns
+    /// * `Result<bool, sqlx::Error>` - True if unassigned, false if not found
+    pub async fn unassign(
+        pool: &PgPool,
+        card_id: Uuid,
+        label_id: Uuid,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query!(
+            r#"
+            DELETE FROM card_labels
+            WHERE card_id = $1 AND label_id = $2
+            "#,
+            card_id,
+            label_id
+        )
+        .execute(pool)
+        .await?;
+
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Get all card-label assignments for a card
     ///
     /// # Arguments
     /// * `pool` - Database connection pool
     /// * `card_id` - Card UUID
     ///
     /// # Returns
-    /// * `Result<u64, sqlx::Error>` - Number of labels deleted
-    pub async fn delete_by_card_id(pool: &PgPool, card_id: Uuid) -> Result<u64, sqlx::Error> {
-        let result = sqlx::query!(
+    /// * `Result<Vec<CardLabel>, sqlx::Error>` - List of assignments
+    pub async fn find_by_card_id(pool: &PgPool, card_id: Uuid) -> Result<Vec<Self>, sqlx::Error> {
+        let assignments = sqlx::query_as!(
+            CardLabel,
             r#"
-            DELETE FROM labels
+            SELECT card_id, label_id, created_at
+            FROM card_labels
             WHERE card_id = $1
             "#,
             card_id
         )
-        .execute(pool)
+        .fetch_all(pool)
         .await?;
 
-        Ok(result.rows_affected())
+        Ok(assignments)
     }
 }

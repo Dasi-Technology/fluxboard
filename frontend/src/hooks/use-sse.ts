@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { SSEClient, SSEEvent, SSEConnectionStatus } from "@/lib/sse";
 import { useBoardStore } from "@/store/board-store";
-import type { Board, Column, Card, Label } from "@/lib/types";
+import type { Board, Column, Card, BoardLabel } from "@/lib/types";
 
 export const useSSE = (shareToken: string | null) => {
   const sseClientRef = useRef<SSEClient | null>(null);
@@ -18,9 +18,11 @@ export const useSSE = (shareToken: string | null) => {
     updateCard,
     deleteCard,
     moveCard,
-    addLabel,
-    updateLabel,
-    deleteLabel,
+    addBoardLabel,
+    updateBoardLabel,
+    deleteBoardLabel,
+    assignLabelToCard,
+    unassignLabelFromCard,
   } = useBoardStore();
 
   useEffect(() => {
@@ -108,33 +110,34 @@ export const useSSE = (shareToken: string | null) => {
           break;
         }
 
-        case "label_created": {
-          const label = event.label as Label;
-          addLabel(label.card_id, label);
+        case "board_label_created": {
+          const label = event.label as BoardLabel;
+          addBoardLabel(label);
           break;
         }
 
-        case "label_updated": {
-          const label = event.label as Label;
-          updateLabel(label.id, label);
+        case "board_label_updated": {
+          const label = event.label as BoardLabel;
+          updateBoardLabel(label.id, label);
           break;
         }
 
-        case "label_deleted": {
+        case "board_label_deleted": {
           const { label_id } = event;
-          deleteLabel(label_id);
+          deleteBoardLabel(label_id);
           break;
         }
 
-        case "label_assigned": {
-          // For label assigned/unassigned, we might need to refetch the card
-          // or handle it differently. For now, log it.
-          console.log("[useSSE] Label assigned:", event);
+        case "card_label_assigned": {
+          const { card_id, label } = event;
+          const boardLabel = label as BoardLabel;
+          assignLabelToCard(card_id, boardLabel.id);
           break;
         }
 
-        case "label_unassigned": {
-          console.log("[useSSE] Label unassigned:", event);
+        case "card_label_unassigned": {
+          const { card_id, label_id } = event;
+          unassignLabelFromCard(card_id, label_id);
           break;
         }
 
@@ -174,9 +177,11 @@ export const useSSE = (shareToken: string | null) => {
     updateCard,
     deleteCard,
     moveCard,
-    addLabel,
-    updateLabel,
-    deleteLabel,
+    addBoardLabel,
+    updateBoardLabel,
+    deleteBoardLabel,
+    assignLabelToCard,
+    unassignLabelFromCard,
   ]);
 
   return {
