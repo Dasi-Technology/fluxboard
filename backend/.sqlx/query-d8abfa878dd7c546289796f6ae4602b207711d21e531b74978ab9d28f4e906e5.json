@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO card_labels (card_id, label_id)\n            VALUES ($1, $2)\n            ON CONFLICT (card_id, label_id) DO NOTHING\n            RETURNING card_id, label_id, created_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "card_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "label_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d8abfa878dd7c546289796f6ae4602b207711d21e531b74978ab9d28f4e906e5"
+}

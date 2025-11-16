@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, card_id, name, color, created_at\n            FROM labels\n            WHERE id = $1\n            ",
+  "query": "\n            SELECT id, board_id, name, color, created_at, updated_at\n            FROM board_labels\n            WHERE board_id = $1\n            ORDER BY created_at ASC\n            ",
   "describe": {
     "columns": [
       {
@@ -10,7 +10,7 @@
       },
       {
         "ordinal": 1,
-        "name": "card_id",
+        "name": "board_id",
         "type_info": "Uuid"
       },
       {
@@ -27,6 +27,11 @@
         "ordinal": 4,
         "name": "created_at",
         "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
@@ -39,8 +44,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "1b9d06c48b1ec7de9f2d3b3db2958b976ed28de12e981301708bf0c13c5998cf"
+  "hash": "e4609f43ebb334e69e57f9d4c64f3865fc385f868c87abe6939dfd3ffffc9988"
 }

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            DELETE FROM card_labels\n            WHERE card_id = $1 AND label_id = $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "954b1a73d4fab6d6af175f9bdef80e04406c98895c2f06c32b148ba4dfc0ad90"
+}

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            INSERT INTO labels (card_id, name, color)\n            VALUES ($1, $2, $3)\n            RETURNING id, card_id, name, color, created_at\n            ",
+  "query": "\n            UPDATE board_labels\n            SET\n                name = COALESCE($2, name),\n                color = COALESCE($3, color)\n            WHERE id = $1\n            RETURNING id, board_id, name, color, created_at, updated_at\n            ",
   "describe": {
     "columns": [
       {
@@ -10,7 +10,7 @@
       },
       {
         "ordinal": 1,
-        "name": "card_id",
+        "name": "board_id",
         "type_info": "Uuid"
       },
       {
@@ -27,6 +27,11 @@
         "ordinal": 4,
         "name": "created_at",
         "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
@@ -41,8 +46,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "5f8f62409415d2ca95108841e985aeb336e36e25c697184bc20c128c0d95b932"
+  "hash": "f254860460c4d9b968384b0aa3d88b4f5b2539173888fb3803a68cc46bf62759"
 }
