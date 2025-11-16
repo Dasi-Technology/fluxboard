@@ -3,10 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { CreateBoardDialog } from "@/components/dialogs/create-board-dialog";
 import { Toast } from "@/components/shared/toast";
 import { useUIStore } from "@/store/ui-store";
-import { getRecentBoards, type RecentBoard } from "@/lib/recent-boards";
+import {
+  getRecentBoardsLimited,
+  searchRecentBoards,
+  type RecentBoard,
+} from "@/lib/recent-boards";
 import {
   Card,
   CardContent,
@@ -14,16 +19,27 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Search } from "lucide-react";
 
 export default function Home() {
   const { openCreateBoardDialog } = useUIStore();
   const [recentBoards, setRecentBoards] = useState<RecentBoard[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    setRecentBoards(getRecentBoards());
+    setRecentBoards(getRecentBoardsLimited());
   }, []);
+
+  // Handle search
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      setRecentBoards(searchRecentBoards(searchQuery));
+    } else {
+      setRecentBoards(getRecentBoardsLimited());
+    }
+  }, [searchQuery]);
 
   const formatRelativeTime = (visitedAt: string) => {
     const now = Date.now();
@@ -73,36 +89,59 @@ export default function Home() {
           </div>
 
           {/* Recent Boards Section */}
-          {mounted && recentBoards.length > 0 && (
-            <div className="w-full">
-              <h2 className="text-2xl font-semibold text-slate-900 mb-6 text-center">
-                Recent Boards
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {recentBoards.map((board) => (
-                  <Link
-                    key={board.shareToken}
-                    href={`/board/${board.shareToken}`}
-                    className="transition-transform hover:scale-105"
-                  >
-                    <Card className="h-full cursor-pointer hover:shadow-lg transition-shadow bg-white">
-                      <CardHeader>
-                        <CardTitle className="truncate text-xl">
-                          {board.name}
-                        </CardTitle>
-                        <CardDescription>
-                          Last visited {formatRelativeTime(board.visitedAt)}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-xs text-slate-500 font-mono truncate">
-                          {board.shareToken}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
+          {mounted && (
+            <div className="w-full space-y-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <h2 className="text-2xl font-semibold text-slate-900">
+                  {searchQuery.trim() ? "Search Results" : "Recent Boards"}
+                </h2>
+                <div className="relative w-full sm:w-96">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search boards by name or token..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 bg-white"
+                  />
+                </div>
               </div>
+
+              {recentBoards.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {recentBoards.map((board) => (
+                    <Link
+                      key={board.shareToken}
+                      href={`/board/${board.shareToken}`}
+                      className="transition-transform hover:scale-105"
+                    >
+                      <Card className="h-full cursor-pointer hover:shadow-lg transition-shadow bg-white">
+                        <CardHeader>
+                          <CardTitle className="truncate text-xl">
+                            {board.name}
+                          </CardTitle>
+                          <CardDescription>
+                            Last visited {formatRelativeTime(board.visitedAt)}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-xs text-slate-500 font-mono truncate">
+                            {board.shareToken}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-slate-600">
+                    {searchQuery.trim()
+                      ? `No boards found matching "${searchQuery}"`
+                      : "No recent boards yet. Create your first board to get started!"}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
