@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, share_token, title, description, created_at, updated_at\n            FROM boards\n            ORDER BY created_at DESC\n            ",
+  "query": "\n            UPDATE boards\n            SET\n                is_locked = $3,\n                updated_at = NOW()\n            WHERE id = $1 AND password = $2\n            RETURNING id, share_token, title, description, password, is_locked, created_at, updated_at\n            ",
   "describe": {
     "columns": [
       {
@@ -25,17 +25,31 @@
       },
       {
         "ordinal": 4,
+        "name": "password",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "is_locked",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 5,
+        "ordinal": 7,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Uuid",
+        "Text",
+        "Bool"
+      ]
     },
     "nullable": [
       false,
@@ -43,8 +57,10 @@
       false,
       true,
       false,
+      false,
+      false,
       false
     ]
   },
-  "hash": "bd46ce35e581c686e8ce69e4081b78f6420d2950c1e8965a5e20475da323950a"
+  "hash": "9d7be94d033f4e3428eff70185582eeb6baa7b7378d28306172d57951b871b42"
 }

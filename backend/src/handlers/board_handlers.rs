@@ -4,7 +4,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::error::AppResult;
-use crate::models::{CreateBoardInput, UpdateBoardInput};
+use crate::models::{CreateBoardInput, SetLockStateInput, UpdateBoardInput};
 use crate::services::BoardService;
 use crate::sse::events::SseEvent;
 use crate::sse::manager::SseManager;
@@ -81,4 +81,35 @@ pub async fn update_board(
 pub async fn delete_board(pool: web::Data<PgPool>, id: web::Path<Uuid>) -> AppResult<HttpResponse> {
     BoardService::delete_board(pool.get_ref(), id.into_inner()).await?;
     Ok(HttpResponse::NoContent().finish())
+}
+
+/// Lock or unlock a board
+pub async fn set_board_lock_state(
+    pool: web::Data<PgPool>,
+    sse_manager: web::Data<Arc<SseManager>>,
+    token: web::Path<String>,
+    input: web::Json<SetLockStateInput>,
+) -> AppResult<HttpResponse> {
+    let share_token = token.into_inner();
+    let lock_input = input.into_inner();
+
+    let board = BoardService::set_board_lock_state(
+        pool.get_ref(),
+        &share_token,
+        &lock_input.password,
+        lock_input.is_locked,
+    )
+    .await?;
+
+    // Broadcast lock state change via SSE
+    sse_manager
+        .broadcast(
+            board.id,
+            SseEvent::BoardUpdated {
+                board: board.clone(),
+            },
+        )
+        .await;
+
+    Ok(HttpResponse::Ok().json(board))
 }

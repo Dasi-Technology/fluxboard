@@ -12,9 +12,10 @@ import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 
 interface CardProps {
   card: CardType;
+  isReadOnly?: boolean;
 }
 
-export function Card({ card }: CardProps) {
+export function Card({ card, isReadOnly = false }: CardProps) {
   const { deleteCard } = useBoard();
   const { openEditCardDialog } = useUIStore();
 
@@ -55,35 +56,37 @@ export function Card({ card }: CardProps) {
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className={`group relative bg-white border rounded-lg p-2.5 md:p-3 shadow-sm hover:shadow-md transition-all duration-200 cursor-move ${
-        isDragging ? "ring-2 ring-blue-400 ring-offset-2" : ""
-      }`}
-      onClick={handleEdit}
+      {...(!isReadOnly && attributes)}
+      {...(!isReadOnly && listeners)}
+      className={`group relative bg-white border rounded-lg p-2.5 md:p-3 shadow-sm hover:shadow-md transition-all duration-200 ${
+        !isReadOnly ? "cursor-move" : "cursor-default"
+      } ${isDragging ? "ring-2 ring-blue-400 ring-offset-2" : ""}`}
+      onClick={!isReadOnly ? handleEdit : undefined}
     >
       <div className="flex items-start justify-between gap-1.5 md:gap-2">
         <h3 className="text-xs md:text-sm font-medium flex-1 break-words">
           {card.title}
         </h3>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={handleEdit}
-          >
-            <Pencil className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 text-destructive"
-            onClick={handleDelete}
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        </div>
+        {!isReadOnly && (
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={handleEdit}
+            >
+              <Pencil className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-destructive"
+              onClick={handleDelete}
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {card.description && (

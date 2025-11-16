@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label";
 
 interface ShareLinkProps {
   shareToken: string;
+  isLocked?: boolean;
 }
 
-export function ShareLink({ shareToken }: ShareLinkProps) {
+export function ShareLink({ shareToken, isLocked = false }: ShareLinkProps) {
   const [copied, setCopied] = useState(false);
   const shareUrl = `${window.location.origin}/board/${shareToken}`;
 
@@ -58,7 +59,9 @@ export function ShareLink({ shareToken }: ShareLinkProps) {
         </Button>
       </div>
       <p className="text-xs text-muted-foreground hidden md:block">
-        Anyone with this link can view and edit this board.
+        {isLocked
+          ? "This board is locked. Only who created the board can make changes."
+          : "Anyone with this link can view and edit this board."}
       </p>
     </div>
   );

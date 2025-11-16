@@ -6,6 +6,8 @@ export interface Board {
   id: string;
   title: string;
   share_token: string;
+  password: string;
+  is_locked: boolean;
   created_at: string;
   updated_at: string;
   columns?: Column[];
@@ -55,6 +57,11 @@ export interface CreateBoardRequest {
 
 export interface UpdateBoardRequest {
   title?: string;
+}
+
+export interface SetLockStateRequest {
+  password: string;
+  is_locked: boolean;
 }
 
 export interface CreateColumnRequest {

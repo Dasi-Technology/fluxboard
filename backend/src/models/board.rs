@@ -12,6 +12,8 @@ pub struct Board {
     pub share_token: String,
     pub title: String,
     pub description: Option<String>,
+    pub password: String,
+    pub is_locked: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -23,6 +25,8 @@ pub struct BoardWithRelations {
     pub share_token: String,
     pub title: String,
     pub description: Option<String>,
+    pub password: String,
+    pub is_locked: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub columns: Vec<ColumnWithCards>,
@@ -68,6 +72,13 @@ pub struct UpdateBoardInput {
     pub description: Option<String>,
 }
 
+/// Input data for locking/unlocking a board
+#[derive(Debug, Deserialize)]
+pub struct SetLockStateInput {
+    pub password: String,
+    pub is_locked: bool,
+}
+
 impl Board {
     /// Create a new board
     ///
@@ -79,17 +90,20 @@ impl Board {
     /// * `Result<Board, sqlx::Error>` - Created board or error
     pub async fn create(pool: &PgPool, input: CreateBoardInput) -> Result<Self, sqlx::Error> {
         let share_token = Self::generate_share_token();
+        let password = Self::generate_password();
 
         let board = sqlx::query_as!(
             Board,
             r#"
-            INSERT INTO boards (share_token, title, description)
-            VALUES ($1, $2, $3)
-            RETURNING id, share_token, title, description, created_at, updated_at
+            INSERT INTO boards (share_token, title, description, password, is_locked)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id, share_token, title, description, password, is_locked, created_at, updated_at
             "#,
             share_token,
             input.title,
-            input.description
+            input.description,
+            password,
+            false
         )
         .fetch_one(pool)
         .await?;
@@ -109,7 +123,7 @@ impl Board {
         let board = sqlx::query_as!(
             Board,
             r#"
-            SELECT id, share_token, title, description, created_at, updated_at
+            SELECT id, share_token, title, description, password, is_locked, created_at, updated_at
             FROM boards
             WHERE id = $1
             "#,
@@ -136,7 +150,7 @@ impl Board {
         let board = sqlx::query_as!(
             Board,
             r#"
-            SELECT id, share_token, title, description, created_at, updated_at
+            SELECT id, share_token, title, description, password, is_locked, created_at, updated_at
             FROM boards
             WHERE share_token = $1
             "#,
@@ -214,6 +228,8 @@ impl Board {
             share_token: board.share_token,
             title: board.title,
             description: board.description,
+            password: board.password,
+            is_locked: board.is_locked,
             created_at: board.created_at,
             updated_at: board.updated_at,
             columns: columns_with_cards,
@@ -232,7 +248,7 @@ impl Board {
         let boards = sqlx::query_as!(
             Board,
             r#"
-            SELECT id, share_token, title, description, created_at, updated_at
+            SELECT id, share_token, title, description, password, is_locked, created_at, updated_at
             FROM boards
             ORDER BY created_at DESC
             "#
@@ -261,12 +277,12 @@ impl Board {
             Board,
             r#"
             UPDATE boards
-            SET 
+            SET
                 title = COALESCE($2, title),
                 description = COALESCE($3, description),
                 updated_at = NOW()
             WHERE id = $1
-            RETURNING id, share_token, title, description, created_at, updated_at
+            RETURNING id, share_token, title, description, password, is_locked, created_at, updated_at
             "#,
             id,
             input.title,
@@ -316,5 +332,59 @@ impl Board {
                 CHARSET[idx] as char
             })
             .collect()
+    }
+
+    /// Generate a random password for board protection
+    ///
+    /// # Returns
+    /// * `String` - Random alphanumeric password
+    fn generate_password() -> String {
+        use rand::Rng;
+        const CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const PASSWORD_LEN: usize = 16;
+
+        let mut rng = rand::thread_rng();
+        (0..PASSWORD_LEN)
+            .map(|_| {
+                let idx = rng.gen_range(0..CHARSET.len());
+                CHARSET[idx] as char
+            })
+            .collect()
+    }
+
+    /// Lock or unlock a board with password verification
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `id` - Board UUID
+    /// * `password` - Password to verify
+    /// * `is_locked` - New lock state
+    ///
+    /// # Returns
+    /// * `Result<Option<Board>, sqlx::Error>` - Updated board or None if password is incorrect
+    pub async fn set_lock_state(
+        pool: &PgPool,
+        id: Uuid,
+        password: &str,
+        is_locked: bool,
+    ) -> Result<Option<Self>, sqlx::Error> {
+        let board = sqlx::query_as!(
+            Board,
+            r#"
+            UPDATE boards
+            SET
+                is_locked = $3,
+                updated_at = NOW()
+            WHERE id = $1 AND password = $2
+            RETURNING id, share_token, title, description, password, is_locked, created_at, updated_at
+            "#,
+            id,
+            password,
+            is_locked
+        )
+        .fetch_optional(pool)
+        .await?;
+
+        Ok(board)
     }
 }

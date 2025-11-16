@@ -68,6 +68,7 @@ async fn main() -> io::Result<()> {
                 actix_web::http::header::AUTHORIZATION,
                 actix_web::http::header::ACCEPT,
                 actix_web::http::header::CONTENT_TYPE,
+                actix_web::http::header::HeaderName::from_static("x-board-password"),
             ])
             .max_age(3600);
 

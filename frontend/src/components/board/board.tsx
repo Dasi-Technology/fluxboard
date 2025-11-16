@@ -19,10 +19,16 @@ import {
   UsernamePrompt,
   useUsername,
 } from "@/components/presence/username-prompt";
+import { isBoardReadOnly } from "@/lib/board-access";
 
 export function Board() {
   const { board } = useBoardStore();
   const { moveCard, reorderColumn } = useBoard();
+
+  // Check if board is in read-only mode
+  const isReadOnly = board
+    ? isBoardReadOnly(board.share_token, board.is_locked)
+    : false;
 
   const {
     sensors,
@@ -184,10 +190,14 @@ export function Board() {
               strategy={horizontalListSortingStrategy}
             >
               {board.columns?.map((column) => (
-                <Column key={column.id} column={column} />
+                <Column
+                  key={column.id}
+                  column={column}
+                  isReadOnly={isReadOnly}
+                />
               ))}
             </SortableContext>
-            <AddColumn />
+            {!isReadOnly && <AddColumn />}
           </div>
 
           {/* Presence overlay - cursors */}

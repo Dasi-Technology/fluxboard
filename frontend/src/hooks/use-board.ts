@@ -410,7 +410,12 @@ export const useBoard = () => {
     async (name: string, color: string) => {
       if (!board) return;
       try {
-        const newLabel = await api.createBoardLabel(board.id, name, color);
+        const newLabel = await api.createBoardLabel(
+          board.id,
+          name,
+          color,
+          board.share_token
+        );
         addBoardLabel(newLabel);
         showToast("Label created", "success");
         return newLabel;
@@ -427,11 +432,11 @@ export const useBoard = () => {
   const handleUpdateBoardLabel = useCallback(
     async (labelId: string, updates: Partial<BoardLabel>) => {
       const originalLabel = board?.labels?.find((l) => l.id === labelId);
-      if (!originalLabel) return;
+      if (!originalLabel || !board) return;
 
       try {
         updateBoardLabel(labelId, updates);
-        await api.updateBoardLabel(labelId, updates);
+        await api.updateBoardLabel(labelId, updates, board.share_token);
         showToast("Label updated", "success");
       } catch (err) {
         updateBoardLabel(labelId, originalLabel);
@@ -447,11 +452,11 @@ export const useBoard = () => {
   const handleDeleteBoardLabel = useCallback(
     async (labelId: string) => {
       const originalLabel = board?.labels?.find((l) => l.id === labelId);
-      if (!originalLabel) return;
+      if (!originalLabel || !board) return;
 
       try {
         deleteBoardLabel(labelId);
-        await api.deleteBoardLabel(labelId);
+        await api.deleteBoardLabel(labelId, board.share_token);
         showToast("Label deleted", "success");
       } catch (err) {
         addBoardLabel(originalLabel);
@@ -466,9 +471,10 @@ export const useBoard = () => {
 
   const handleAssignLabelToCard = useCallback(
     async (cardId: string, labelId: string) => {
+      if (!board) return;
       try {
         assignLabelToCard(cardId, labelId);
-        await api.assignLabelToCard(cardId, labelId);
+        await api.assignLabelToCard(cardId, labelId, board.share_token);
         showToast("Label assigned", "success");
       } catch (err) {
         unassignLabelFromCard(cardId, labelId);
@@ -478,14 +484,15 @@ export const useBoard = () => {
         throw err;
       }
     },
-    [assignLabelToCard, unassignLabelFromCard, showToast]
+    [board, assignLabelToCard, unassignLabelFromCard, showToast]
   );
 
   const handleUnassignLabelFromCard = useCallback(
     async (cardId: string, labelId: string) => {
+      if (!board) return;
       try {
         unassignLabelFromCard(cardId, labelId);
-        await api.unassignLabelFromCard(cardId, labelId);
+        await api.unassignLabelFromCard(cardId, labelId, board.share_token);
         showToast("Label unassigned", "success");
       } catch (err) {
         assignLabelToCard(cardId, labelId);
@@ -495,7 +502,7 @@ export const useBoard = () => {
         throw err;
       }
     },
-    [unassignLabelFromCard, assignLabelToCard, showToast]
+    [board, unassignLabelFromCard, assignLabelToCard, showToast]
   );
 
   return {

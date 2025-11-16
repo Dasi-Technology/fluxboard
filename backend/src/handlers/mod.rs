@@ -36,6 +36,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
                 "/boards/share/{token}",
                 web::put().to(board_handlers::update_board_by_share_token),
             )
+            .route(
+                "/boards/share/{token}/lock",
+                web::post().to(board_handlers::set_board_lock_state),
+            )
             // Column routes
             .route(
                 "/boards/{board_id}/columns",

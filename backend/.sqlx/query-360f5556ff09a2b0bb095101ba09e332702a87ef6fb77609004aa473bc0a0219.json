@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            INSERT INTO boards (share_token, title, description)\n            VALUES ($1, $2, $3)\n            RETURNING id, share_token, title, description, created_at, updated_at\n            ",
+  "query": "\n            INSERT INTO boards (share_token, title, description, password, is_locked)\n            VALUES ($1, $2, $3, $4, $5)\n            RETURNING id, share_token, title, description, password, is_locked, created_at, updated_at\n            ",
   "describe": {
     "columns": [
       {
@@ -25,11 +25,21 @@
       },
       {
         "ordinal": 4,
+        "name": "password",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "is_locked",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 5,
+        "ordinal": 7,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -38,7 +48,9 @@
       "Left": [
         "Varchar",
         "Varchar",
-        "Text"
+        "Text",
+        "Varchar",
+        "Bool"
       ]
     },
     "nullable": [
@@ -47,8 +59,10 @@
       false,
       true,
       false,
+      false,
+      false,
       false
     ]
   },
-  "hash": "fb969158e04d8dbdf5e63b160f36e1ca87ebd87c654bda3a05b3398763fef0b2"
+  "hash": "360f5556ff09a2b0bb095101ba09e332702a87ef6fb77609004aa473bc0a0219"
 }

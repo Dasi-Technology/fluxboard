@@ -9,7 +9,7 @@ pub mod column;
 pub mod label;
 
 // Re-export models for easier imports
-pub use board::{Board, BoardWithRelations, CreateBoardInput, UpdateBoardInput};
+pub use board::{Board, BoardWithRelations, CreateBoardInput, SetLockStateInput, UpdateBoardInput};
 pub use card::{Card, CreateCardInput, UpdateCardInput};
 pub use column::{Column, CreateColumnInput, UpdateColumnInput};
 pub use label::{BoardLabel, CardLabel, CreateBoardLabelInput, UpdateBoardLabelInput};

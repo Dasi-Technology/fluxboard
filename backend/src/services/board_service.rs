@@ -155,4 +155,38 @@ impl BoardService {
             )))
         }
     }
+
+    /// Lock or unlock a board with password verification
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `share_token` - Board share token
+    /// * `password` - Password to verify
+    /// * `is_locked` - New lock state
+    ///
+    /// # Returns
+    /// * `AppResult<Board>` - Updated board or error
+    pub async fn set_board_lock_state(
+        pool: &PgPool,
+        share_token: &str,
+        password: &str,
+        is_locked: bool,
+    ) -> AppResult<Board> {
+        // First get the board by share token to get its ID
+        let board = Board::find_by_share_token(pool, share_token)
+            .await?
+            .ok_or_else(|| {
+                AppError::NotFound(format!(
+                    "Board with share token '{}' not found",
+                    share_token
+                ))
+            })?;
+
+        // Attempt to set lock state with password verification
+        let updated_board = Board::set_lock_state(pool, board.id, password, is_locked)
+            .await?
+            .ok_or_else(|| AppError::Unauthorized("Invalid password".to_string()))?;
+
+        Ok(updated_board)
+    }
 }

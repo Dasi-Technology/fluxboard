@@ -23,9 +23,10 @@ import { useBoard } from "@/hooks/use-board";
 
 interface ColumnProps {
   column: ColumnType;
+  isReadOnly?: boolean;
 }
 
-export function Column({ column }: ColumnProps) {
+export function Column({ column, isReadOnly = false }: ColumnProps) {
   const { deleteColumn } = useBoard();
   const { openEditColumnDialog } = useUIStore();
 
@@ -88,26 +89,28 @@ export function Column({ column }: ColumnProps) {
         <h2 className="font-semibold text-base md:text-lg truncate flex-1 mr-2">
           {column.title}
         </h2>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleEdit}>
-              <Pencil className="h-4 w-4 mr-2" />
-              Rename
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={handleDelete}
-              className="text-destructive"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {!isReadOnly && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleEdit}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleDelete}
+                className="text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       <div
@@ -116,12 +119,12 @@ export function Column({ column }: ColumnProps) {
       >
         <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
           {column.cards?.map((card) => (
-            <Card key={card.id} card={card} />
+            <Card key={card.id} card={card} isReadOnly={isReadOnly} />
           ))}
         </SortableContext>
       </div>
 
-      <AddCard columnId={column.id} />
+      {!isReadOnly && <AddCard columnId={column.id} />}
     </div>
   );
 }

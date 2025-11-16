@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Board } from "@/components/board/board";
 import { CreateBoardDialog } from "@/components/dialogs/create-board-dialog";
 import { EditCardDialog } from "@/components/dialogs/edit-card-dialog";
@@ -14,7 +14,9 @@ import { useBoardStore } from "@/store/board-store";
 import { useUIStore } from "@/store/ui-store";
 import { addRecentBoard } from "@/lib/recent-boards";
 import { Button } from "@/components/ui/button";
-import { Tag } from "lucide-react";
+import { Tag, Lock, Unlock } from "lucide-react";
+import { isBoardOwner, getBoardPassword } from "@/lib/board-passwords";
+import { setBoardLockState } from "@/lib/api";
 
 interface BoardPageProps {
   params: {
@@ -25,11 +27,40 @@ interface BoardPageProps {
 export default function BoardPage({ params }: BoardPageProps) {
   const { shareToken } = params;
   const { loadBoard } = useBoard();
-  const { board, isLoading, error, reset } = useBoardStore();
+  const { board, isLoading, error, reset, updateBoard } = useBoardStore();
   const { openManageLabelsDialog } = useUIStore();
+  const [isTogglingLock, setIsTogglingLock] = useState(false);
+
+  // Check if user is the board owner
+  const isOwner = board ? isBoardOwner(board.share_token) : false;
 
   // Establish SSE connection
   useSSE(shareToken);
+
+  // Handle lock/unlock toggle
+  const handleToggleLock = async () => {
+    if (!board || !isOwner) return;
+
+    const password = getBoardPassword(board.share_token);
+    if (!password) {
+      console.error("No password found for board");
+      return;
+    }
+
+    setIsTogglingLock(true);
+    try {
+      const updatedBoard = await setBoardLockState(
+        board.share_token,
+        password,
+        !board.is_locked
+      );
+      updateBoard(updatedBoard);
+    } catch (error) {
+      console.error("Failed to toggle lock state:", error);
+    } finally {
+      setIsTogglingLock(false);
+    }
+  };
 
   // Reset store and load board data when shareToken changes
   useEffect(() => {
@@ -96,17 +127,53 @@ export default function BoardPage({ params }: BoardPageProps) {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={openManageLabelsDialog}
-                className="flex items-center gap-2"
-              >
-                <Tag className="h-4 w-4" />
-                <span className="hidden sm:inline">Manage Labels</span>
-              </Button>
+              {isOwner && (
+                <Button
+                  variant={board.is_locked ? "default" : "outline"}
+                  size="sm"
+                  onClick={handleToggleLock}
+                  disabled={isTogglingLock}
+                  className="flex items-center gap-2"
+                  title={board.is_locked ? "Unlock board" : "Lock board"}
+                >
+                  {board.is_locked ? (
+                    <Lock className="h-4 w-4" />
+                  ) : (
+                    <Unlock className="h-4 w-4" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {board.is_locked ? "Locked" : "Unlocked"}
+                  </span>
+                </Button>
+              )}
+              {!isOwner && board.is_locked && (
+                <div className="flex items-center gap-2 text-sm text-slate-600 px-3 py-1.5 bg-slate-100 rounded-md">
+                  <Lock className="h-4 w-4" />
+                  <span className="hidden sm:inline">Read Only</span>
+                </div>
+              )}
+              {board.is_locked && !isOwner ? (
+                <div
+                  className="flex items-center gap-2 text-sm text-slate-600 px-3 py-1.5 bg-slate-100 rounded-md opacity-50 cursor-not-allowed"
+                  title="Board is locked - only the owner can manage labels"
+                >
+                  <Tag className="h-4 w-4" />
+                  <span className="hidden sm:inline">Manage Labels</span>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={openManageLabelsDialog}
+                  className="flex items-center gap-2"
+                  title="Manage board labels"
+                >
+                  <Tag className="h-4 w-4" />
+                  <span className="hidden sm:inline">Manage Labels</span>
+                </Button>
+              )}
               <div className="w-auto md:w-96 flex-shrink-0">
-                <ShareLink shareToken={shareToken} />
+                <ShareLink shareToken={shareToken} isLocked={board.is_locked} />
               </div>
             </div>
           </div>

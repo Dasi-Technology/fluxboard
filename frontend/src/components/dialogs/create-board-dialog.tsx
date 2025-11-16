@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUIStore } from "@/store/ui-store";
 import { useBoard } from "@/hooks/use-board";
+import { saveBoardPassword } from "@/lib/board-passwords";
 
 export function CreateBoardDialog() {
   const router = useRouter();
@@ -30,6 +31,10 @@ export function CreateBoardDialog() {
     setIsLoading(true);
     try {
       const board = await createBoard(name.trim());
+
+      // Save the board password to localStorage so the user can lock/unlock the board
+      saveBoardPassword(board.share_token, board.password);
+
       closeCreateBoardDialog();
       setName("");
       router.push(`/board/${board.share_token}`);

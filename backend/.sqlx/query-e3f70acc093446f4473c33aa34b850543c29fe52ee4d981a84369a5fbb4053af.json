@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, share_token, title, description, created_at, updated_at\n            FROM boards\n            WHERE share_token = $1\n            ",
+  "query": "\n            SELECT id, share_token, title, description, password, is_locked, created_at, updated_at\n            FROM boards\n            WHERE share_token = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -25,11 +25,21 @@
       },
       {
         "ordinal": 4,
+        "name": "password",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "is_locked",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 5,
+        "ordinal": 7,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -45,8 +55,10 @@
       false,
       true,
       false,
+      false,
+      false,
       false
     ]
   },
-  "hash": "46c7517d83bb4d77b5d60b1b16ada7ced4aca5841e5dcf95dca0078caf019abe"
+  "hash": "e3f70acc093446f4473c33aa34b850543c29fe52ee4d981a84369a5fbb4053af"
 }
