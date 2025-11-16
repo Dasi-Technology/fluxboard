@@ -86,13 +86,15 @@ export function ActiveUsers({ users, presenceCount }: ActiveUsersProps) {
         )}
       </div>
 
-      {/* Presence count */}
-      <div className="flex items-center gap-1.5 pl-2 border-l border-gray-200">
-        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-        <span className="text-sm font-medium text-gray-700">
-          {presenceCount} {presenceCount === 1 ? "viewer" : "viewers"}
-        </span>
-      </div>
+      {/* Presence count - only show when more than 1 viewer */}
+      {presenceCount > 1 && (
+        <div className="flex items-center gap-1.5 pl-2 border-l border-gray-200">
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+          <span className="text-sm font-medium text-gray-700">
+            {presenceCount} viewers
+          </span>
+        </div>
+      )}
     </div>
   );
 }
