@@ -4,3 +4,5 @@
 // - Common validation functions
 // - Date/time utilities
 // - Other shared utilities
+
+pub mod serde_helpers;

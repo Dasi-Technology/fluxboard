@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+use crate::utils::serde_helpers::deserialize_null_default;
+
 /// Card model representing a card in a column
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Card {
@@ -28,7 +30,8 @@ pub struct CreateCardInput {
 #[derive(Debug, Deserialize)]
 pub struct UpdateCardInput {
     pub title: Option<String>,
-    pub description: Option<String>,
+    #[serde(default, deserialize_with = "deserialize_null_default")]
+    pub description: Option<Option<String>>,
     pub position: Option<i32>,
     pub column_id: Option<Uuid>,
 }
@@ -153,13 +156,18 @@ impl Card {
         id: Uuid,
         input: UpdateCardInput,
     ) -> Result<Option<Self>, sqlx::Error> {
+        // Flatten the Option<Option<String>> for description
+        // None = don't update, Some(None) = set to NULL, Some(Some(v)) = set to v
+        let update_description = input.description.is_some();
+        let description_value = input.description.clone().flatten();
+
         let card = sqlx::query_as!(
             Card,
             r#"
             UPDATE cards
-            SET 
+            SET
                 title = COALESCE($2, title),
-                description = COALESCE($3, description),
+                description = CASE WHEN $6 THEN $3 ELSE description END,
                 position = COALESCE($4, position),
                 column_id = COALESCE($5, column_id),
                 updated_at = NOW()
@@ -168,9 +176,10 @@ impl Card {
             "#,
             id,
             input.title,
-            input.description,
+            description_value,
             input.position,
-            input.column_id
+            input.column_id,
+            update_description
         )
         .fetch_optional(pool)
         .await?;
