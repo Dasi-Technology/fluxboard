@@ -50,9 +50,11 @@ export const updateBoardName = async (
   shareToken: string,
   name: string
 ): Promise<Board> => {
-  const response = await api.put<Board>(`/boards/share/${shareToken}`, {
-    title: name,
-  });
+  const response = await api.put<Board>(
+    `/boards/share/${shareToken}`,
+    { title: name },
+    { headers: getHeadersWithPassword(shareToken) }
+  );
   return response.data;
 };
 
@@ -72,89 +74,120 @@ export const setBoardLockState = async (
 export const createColumn = async (
   boardId: string,
   title: string,
-  position: number
+  position: number,
+  shareToken?: string
 ): Promise<Column> => {
-  const response = await api.post<Column>(`/boards/${boardId}/columns`, {
-    title,
-    position,
-  });
+  const response = await api.post<Column>(
+    `/boards/${boardId}/columns`,
+    { title, position },
+    { headers: getHeadersWithPassword(shareToken) }
+  );
   return response.data;
 };
 
 export const updateColumn = async (
   columnId: string,
-  updates: Partial<Pick<Column, "title" | "position">>
+  updates: Partial<Pick<Column, "title" | "position">>,
+  shareToken?: string
 ): Promise<Column> => {
-  const response = await api.put<Column>(`/columns/${columnId}`, updates);
+  const response = await api.put<Column>(`/columns/${columnId}`, updates, {
+    headers: getHeadersWithPassword(shareToken),
+  });
   return response.data;
 };
 
-export const deleteColumn = async (columnId: string): Promise<void> => {
-  await api.delete(`/columns/${columnId}`);
+export const deleteColumn = async (
+  columnId: string,
+  shareToken?: string
+): Promise<void> => {
+  await api.delete(`/columns/${columnId}`, {
+    headers: getHeadersWithPassword(shareToken),
+  });
 };
 
 export const reorderColumns = async (
   boardId: string,
-  columnPositions: Array<[string, number]>
+  columnPositions: Array<[string, number]>,
+  shareToken?: string
 ): Promise<void> => {
-  await api.patch(`/boards/${boardId}/columns/reorder`, {
-    column_positions: columnPositions,
-  });
+  await api.patch(
+    `/boards/${boardId}/columns/reorder`,
+    { column_positions: columnPositions },
+    { headers: getHeadersWithPassword(shareToken) }
+  );
 };
 
 // Card API endpoints
 export const createCard = async (
   columnId: string,
   title: string,
-  position: number
+  position: number,
+  shareToken?: string
 ): Promise<Card> => {
-  const response = await api.post<Card>(`/columns/${columnId}/cards`, {
-    title,
-    position,
-  });
+  const response = await api.post<Card>(
+    `/columns/${columnId}/cards`,
+    { title, position },
+    { headers: getHeadersWithPassword(shareToken) }
+  );
   return response.data;
 };
 
 export const reorderCards = async (
   columnId: string,
-  cardPositions: Array<[string, number]>
+  cardPositions: Array<[string, number]>,
+  shareToken?: string
 ): Promise<void> => {
-  await api.patch(`/columns/${columnId}/cards/reorder`, {
-    card_positions: cardPositions,
-  });
+  await api.patch(
+    `/columns/${columnId}/cards/reorder`,
+    { card_positions: cardPositions },
+    { headers: getHeadersWithPassword(shareToken) }
+  );
 };
 
 export const updateCard = async (
   cardId: string,
   updates: Partial<
     Pick<Card, "title" | "description" | "position" | "column_id">
-  >
+  >,
+  shareToken?: string
 ): Promise<Card> => {
-  const response = await api.put<Card>(`/cards/${cardId}`, updates);
+  const response = await api.put<Card>(`/cards/${cardId}`, updates, {
+    headers: getHeadersWithPassword(shareToken),
+  });
   return response.data;
 };
 
 export const moveCard = async (
   cardId: string,
   columnId: string,
-  position: number
+  position: number,
+  shareToken?: string
 ): Promise<Card> => {
-  const response = await api.patch<Card>(`/cards/${cardId}/move`, {
-    column_id: columnId,
-    position,
-  });
+  const response = await api.patch<Card>(
+    `/cards/${cardId}/move`,
+    { column_id: columnId, position },
+    { headers: getHeadersWithPassword(shareToken) }
+  );
   return response.data;
 };
 
-export const deleteCard = async (cardId: string): Promise<void> => {
-  await api.delete(`/cards/${cardId}`);
+export const deleteCard = async (
+  cardId: string,
+  shareToken?: string
+): Promise<void> => {
+  await api.delete(`/cards/${cardId}`, {
+    headers: getHeadersWithPassword(shareToken),
+  });
 };
 
 // Board Label API endpoints
 export const getBoardLabels = async (
-  boardId: string
+  boardId: string,
+  shareToken?: string
 ): Promise<BoardLabel[]> => {
-  const response = await api.get<BoardLabel[]>(`/boards/${boardId}/labels`);
+  const response = await api.get<BoardLabel[]>(`/boards/${boardId}/labels`, {
+    headers: getHeadersWithPassword(shareToken),
+  });
   return response.data;
 };
 
@@ -226,25 +259,35 @@ export const unassignLabelFromCard = async (
 export const createLabel = async (
   cardId: string,
   name: string,
-  color: string
+  color: string,
+  shareToken?: string
 ): Promise<BoardLabel> => {
-  const response = await api.post<BoardLabel>(`/cards/${cardId}/labels`, {
-    name,
-    color,
-  });
+  const response = await api.post<BoardLabel>(
+    `/cards/${cardId}/labels`,
+    { name, color },
+    { headers: getHeadersWithPassword(shareToken) }
+  );
   return response.data;
 };
 
 export const updateLabel = async (
   labelId: string,
-  updates: Partial<Pick<BoardLabel, "name" | "color">>
+  updates: Partial<Pick<BoardLabel, "name" | "color">>,
+  shareToken?: string
 ): Promise<BoardLabel> => {
-  const response = await api.put<BoardLabel>(`/labels/${labelId}`, updates);
+  const response = await api.put<BoardLabel>(`/labels/${labelId}`, updates, {
+    headers: getHeadersWithPassword(shareToken),
+  });
   return response.data;
 };
 
-export const deleteLabel = async (labelId: string): Promise<void> => {
-  await api.delete(`/labels/${labelId}`);
+export const deleteLabel = async (
+  labelId: string,
+  shareToken?: string
+): Promise<void> => {
+  await api.delete(`/labels/${labelId}`, {
+    headers: getHeadersWithPassword(shareToken),
+  });
 };
 
 // AI generation endpoints

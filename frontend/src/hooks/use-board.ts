@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useBoardStore } from "@/store/board-store";
 import { useUIStore } from "@/store/ui-store";
 import * as api from "@/lib/api";
+import { validateBoardOperation } from "@/lib/board-access";
 import type { Card, Column, BoardLabel } from "@/lib/types";
 
 export const useBoard = () => {
@@ -79,6 +80,7 @@ export const useBoard = () => {
       if (!board) return;
       const previousBoard = { ...board };
       try {
+        validateBoardOperation(board.share_token, board.is_locked);
         updateBoard({ title: name });
         await api.updateBoardName(shareToken, name);
         showToast("Board name updated", "success");
@@ -98,8 +100,14 @@ export const useBoard = () => {
     async (title: string) => {
       if (!board) return;
       try {
+        validateBoardOperation(board.share_token, board.is_locked);
         const position = board.columns?.length || 0;
-        const newColumn = await api.createColumn(board.id, title, position);
+        const newColumn = await api.createColumn(
+          board.id,
+          title,
+          position,
+          board.share_token
+        );
         addColumn(newColumn);
         showToast("Column created", "success");
         return newColumn;
@@ -117,10 +125,11 @@ export const useBoard = () => {
   const handleUpdateColumn = useCallback(
     async (columnId: string, updates: Partial<Column>) => {
       const column = board?.columns?.find((c) => c.id === columnId);
-      if (!column) return;
+      if (!column || !board) return;
       try {
+        validateBoardOperation(board.share_token, board.is_locked);
         updateColumn(columnId, updates);
-        await api.updateColumn(columnId, updates);
+        await api.updateColumn(columnId, updates, board.share_token);
         showToast("Column updated", "success");
       } catch (err) {
         updateColumn(columnId, column);
@@ -137,10 +146,11 @@ export const useBoard = () => {
   const handleDeleteColumn = useCallback(
     async (columnId: string) => {
       const column = board?.columns?.find((c) => c.id === columnId);
-      if (!column) return;
+      if (!column || !board) return;
       try {
+        validateBoardOperation(board.share_token, board.is_locked);
         deleteColumn(columnId);
-        await api.deleteColumn(columnId);
+        await api.deleteColumn(columnId, board.share_token);
         showToast("Column deleted", "success");
       } catch (err) {
         addColumn(column);
@@ -160,6 +170,8 @@ export const useBoard = () => {
       if (!board) return;
 
       try {
+        validateBoardOperation(board.share_token, board.is_locked);
+
         // Optimistic update
         moveColumn(columnId, newPosition);
 
@@ -178,7 +190,7 @@ export const useBoard = () => {
         );
 
         // Call the new reorder API endpoint
-        await api.reorderColumns(board.id, columnPositions);
+        await api.reorderColumns(board.id, columnPositions, board.share_token);
       } catch (err) {
         // Rollback on error
         if (board) {
@@ -197,10 +209,16 @@ export const useBoard = () => {
   const createCard = useCallback(
     async (columnId: string, title: string) => {
       const column = board?.columns?.find((c) => c.id === columnId);
-      if (!column) return;
+      if (!column || !board) return;
       try {
+        validateBoardOperation(board.share_token, board.is_locked);
         const position = column.cards?.length || 0;
-        const newCard = await api.createCard(columnId, title, position);
+        const newCard = await api.createCard(
+          columnId,
+          title,
+          position,
+          board.share_token
+        );
         addCard(newCard);
         showToast("Card created", "success");
         return newCard;
@@ -222,11 +240,12 @@ export const useBoard = () => {
         const card = col.cards?.find((c) => c.id === cardId);
         if (card) originalCard = card;
       });
-      if (!originalCard) return;
+      if (!originalCard || !board) return;
 
       try {
+        validateBoardOperation(board.share_token, board.is_locked);
         updateCard(cardId, updates);
-        await api.updateCard(cardId, updates);
+        await api.updateCard(cardId, updates, board.share_token);
         showToast("Card updated", "success");
       } catch (err) {
         updateCard(cardId, originalCard);
@@ -247,11 +266,12 @@ export const useBoard = () => {
         const card = col.cards?.find((c) => c.id === cardId);
         if (card) originalCard = card;
       });
-      if (!originalCard) return;
+      if (!originalCard || !board) return;
 
       try {
+        validateBoardOperation(board.share_token, board.is_locked);
         deleteCard(cardId);
-        await api.deleteCard(cardId);
+        await api.deleteCard(cardId, board.share_token);
         showToast("Card deleted", "success");
       } catch (err) {
         addCard(originalCard);
@@ -268,6 +288,7 @@ export const useBoard = () => {
   const handleMoveCard = useCallback(
     async (cardId: string, newColumnId: string, newPosition: number) => {
       const oldColumns = board?.columns ? [...board.columns] : [];
+      if (!board) return;
 
       // Find the card's current column
       let currentCard: Card | undefined;
@@ -286,6 +307,8 @@ export const useBoard = () => {
       const isWithinSameColumn = currentColumnId === newColumnId;
 
       try {
+        validateBoardOperation(board.share_token, board.is_locked);
+
         // Optimistic update
         moveCard(cardId, newColumnId, newPosition);
 
@@ -309,11 +332,20 @@ export const useBoard = () => {
               (c, index) => [c.id, index]
             );
 
-            await api.reorderCards(newColumnId, cardPositions);
+            await api.reorderCards(
+              newColumnId,
+              cardPositions,
+              board.share_token
+            );
           }
         } else {
           // For cross-column moves, use the move_card endpoint
-          await api.moveCard(cardId, newColumnId, newPosition);
+          await api.moveCard(
+            cardId,
+            newColumnId,
+            newPosition,
+            board.share_token
+          );
         }
       } catch (err) {
         // Rollback on error
@@ -332,8 +364,15 @@ export const useBoard = () => {
   // Create label
   const createLabel = useCallback(
     async (cardId: string, name: string, color: string) => {
+      if (!board) return;
       try {
-        const newLabel = await api.createLabel(cardId, name, color);
+        validateBoardOperation(board.share_token, board.is_locked);
+        const newLabel = await api.createLabel(
+          cardId,
+          name,
+          color,
+          board.share_token
+        );
         addLabel(cardId, newLabel);
         showToast("Label created", "success");
         return newLabel;
@@ -344,7 +383,7 @@ export const useBoard = () => {
         throw err;
       }
     },
-    [addLabel, showToast]
+    [board, addLabel, showToast]
   );
 
   // Update label
@@ -357,11 +396,12 @@ export const useBoard = () => {
           if (label) originalLabel = label;
         });
       });
-      if (!originalLabel) return;
+      if (!originalLabel || !board) return;
 
       try {
+        validateBoardOperation(board.share_token, board.is_locked);
         updateLabel(labelId, updates);
-        await api.updateLabel(labelId, updates);
+        await api.updateLabel(labelId, updates, board.share_token);
         showToast("Label updated", "success");
       } catch (err) {
         updateLabel(labelId, originalLabel);
@@ -388,11 +428,12 @@ export const useBoard = () => {
           }
         });
       });
-      if (!originalLabel || !originalCardId) return;
+      if (!originalLabel || !originalCardId || !board) return;
 
       try {
+        validateBoardOperation(board.share_token, board.is_locked);
         deleteLabel(labelId);
-        await api.deleteLabel(labelId);
+        await api.deleteLabel(labelId, board.share_token);
         showToast("Label deleted", "success");
       } catch (err) {
         addLabel(originalCardId, originalLabel);
@@ -410,6 +451,7 @@ export const useBoard = () => {
     async (name: string, color: string) => {
       if (!board) return;
       try {
+        validateBoardOperation(board.share_token, board.is_locked);
         const newLabel = await api.createBoardLabel(
           board.id,
           name,
@@ -435,6 +477,7 @@ export const useBoard = () => {
       if (!originalLabel || !board) return;
 
       try {
+        validateBoardOperation(board.share_token, board.is_locked);
         updateBoardLabel(labelId, updates);
         await api.updateBoardLabel(labelId, updates, board.share_token);
         showToast("Label updated", "success");
@@ -455,6 +498,7 @@ export const useBoard = () => {
       if (!originalLabel || !board) return;
 
       try {
+        validateBoardOperation(board.share_token, board.is_locked);
         deleteBoardLabel(labelId);
         await api.deleteBoardLabel(labelId, board.share_token);
         showToast("Label deleted", "success");
@@ -473,6 +517,7 @@ export const useBoard = () => {
     async (cardId: string, labelId: string) => {
       if (!board) return;
       try {
+        validateBoardOperation(board.share_token, board.is_locked);
         assignLabelToCard(cardId, labelId);
         await api.assignLabelToCard(cardId, labelId, board.share_token);
         showToast("Label assigned", "success");
@@ -491,6 +536,7 @@ export const useBoard = () => {
     async (cardId: string, labelId: string) => {
       if (!board) return;
       try {
+        validateBoardOperation(board.share_token, board.is_locked);
         unassignLabelFromCard(cardId, labelId);
         await api.unassignLabelFromCard(cardId, labelId, board.share_token);
         showToast("Label unassigned", "success");

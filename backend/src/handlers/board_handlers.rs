@@ -1,13 +1,33 @@
-use actix_web::{HttpResponse, web};
+use actix_web::{HttpRequest, HttpResponse, web};
 use sqlx::PgPool;
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::error::AppResult;
-use crate::models::{CreateBoardInput, SetLockStateInput, UpdateBoardInput};
+use crate::error::{AppError, AppResult};
+use crate::models::{Board, CreateBoardInput, SetLockStateInput, UpdateBoardInput};
 use crate::services::BoardService;
 use crate::sse::events::SseEvent;
 use crate::sse::manager::SseManager;
+
+/// Helper function to check if a board operation is allowed
+///
+/// For locked boards, only requests with the correct password in X-Board-Password header are allowed
+fn check_board_password(is_locked: bool, password: &str, req: &HttpRequest) -> bool {
+    // If board is not locked, allow all operations
+    if !is_locked {
+        return true;
+    }
+
+    // Board is locked - check if request has correct password
+    if let Some(password_header) = req.headers().get("X-Board-Password") {
+        if let Ok(password_str) = password_header.to_str() {
+            return password_str == password;
+        }
+    }
+
+    // No password or wrong password - deny operation
+    false
+}
 
 /// Create a new board
 pub async fn create_board(
@@ -42,15 +62,37 @@ pub async fn get_board_by_share_token(
 /// Update a board by share token
 pub async fn update_board_by_share_token(
     pool: web::Data<PgPool>,
+    sse_manager: web::Data<Arc<SseManager>>,
     token: web::Path<String>,
     input: web::Json<UpdateBoardInput>,
+    req: HttpRequest,
 ) -> AppResult<HttpResponse> {
-    let board = BoardService::update_board_by_share_token(
-        pool.get_ref(),
-        &token.into_inner(),
-        input.into_inner(),
-    )
-    .await?;
+    let share_token = token.into_inner();
+
+    // Get board first to check lock status
+    let existing_board = BoardService::get_board_by_share_token(pool.get_ref(), &share_token).await?;
+
+    if !check_board_password(existing_board.is_locked, &existing_board.password, &req) {
+        return Err(AppError::Unauthorized(
+            "Cannot update a locked board. Only the board owner can edit locked boards."
+                .to_string(),
+        ));
+    }
+
+    let board =
+        BoardService::update_board_by_share_token(pool.get_ref(), &share_token, input.into_inner())
+            .await?;
+
+    // Broadcast board update via SSE
+    sse_manager
+        .broadcast(
+            board.id,
+            SseEvent::BoardUpdated {
+                board: board.clone(),
+            },
+        )
+        .await;
+
     Ok(HttpResponse::Ok().json(board))
 }
 
@@ -60,8 +102,20 @@ pub async fn update_board(
     sse_manager: web::Data<Arc<SseManager>>,
     id: web::Path<Uuid>,
     input: web::Json<UpdateBoardInput>,
+    req: HttpRequest,
 ) -> AppResult<HttpResponse> {
     let board_id = id.into_inner();
+
+    // Get board first to check lock status
+    let existing_board = BoardService::get_board_by_id(pool.get_ref(), board_id).await?;
+
+    if !check_board_password(existing_board.is_locked, &existing_board.password, &req) {
+        return Err(AppError::Unauthorized(
+            "Cannot update a locked board. Only the board owner can edit locked boards."
+                .to_string(),
+        ));
+    }
+
     let board = BoardService::update_board(pool.get_ref(), board_id, input.into_inner()).await?;
 
     // Broadcast board update via SSE
