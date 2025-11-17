@@ -19,7 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Search } from "lucide-react";
+import { Search, Github } from "lucide-react";
 
 export default function Home() {
   const { openCreateBoardDialog } = useUIStore();
@@ -144,6 +144,19 @@ export default function Home() {
               )}
             </div>
           )}
+
+          {/* GitHub Link */}
+          <div className="text-center pt-8">
+            <a
+              href="https://github.com/Dasi-Technology/fluxboard"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 transition-colors"
+            >
+              <Github className="h-4 w-4" />
+              <span>View on GitHub</span>
+            </a>
+          </div>
         </div>
       </main>
 
