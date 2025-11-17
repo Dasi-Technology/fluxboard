@@ -12,6 +12,7 @@ pub struct Board {
     pub share_token: String,
     pub title: String,
     pub description: Option<String>,
+    #[serde(skip_serializing)]
     pub password: String,
     pub is_locked: bool,
     pub created_at: DateTime<Utc>,
@@ -25,6 +26,7 @@ pub struct BoardWithRelations {
     pub share_token: String,
     pub title: String,
     pub description: Option<String>,
+    #[serde(skip_serializing)]
     pub password: String,
     pub is_locked: bool,
     pub created_at: DateTime<Utc>,
