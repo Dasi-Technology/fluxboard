@@ -5,6 +5,7 @@ interface BoardStore {
   board: Board | null;
   isLoading: boolean;
   error: string | null;
+  selectedLabelFilter: string[]; // Array of label IDs to filter by
 
   // State setters
   setBoard: (board: Board) => void;
@@ -40,12 +41,19 @@ interface BoardStore {
   // Card-Label assignment operations (new)
   assignLabelToCard: (cardId: string, labelId: string) => void;
   unassignLabelFromCard: (cardId: string, labelId: string) => void;
+
+  // Filter operations
+  setLabelFilter: (labelIds: string[]) => void;
+  toggleLabelFilter: (labelId: string) => void;
+  clearLabelFilter: () => void;
+  getFilteredCards: (columnId: string) => Card[];
 }
 
-export const useBoardStore = create<BoardStore>((set) => ({
+export const useBoardStore = create<BoardStore>((set, get) => ({
   board: null,
   isLoading: false,
   error: null,
+  selectedLabelFilter: [],
 
   setBoard: (board) => set({ board, error: null }),
   setLoading: (isLoading) => set({ isLoading }),
@@ -592,4 +600,50 @@ export const useBoardStore = create<BoardStore>((set) => ({
           }
         : state;
     }),
+
+  // Filter operations
+  setLabelFilter: (labelIds: string[]) => {
+    set({ selectedLabelFilter: labelIds });
+  },
+
+  toggleLabelFilter: (labelId: string) => {
+    set((state) => {
+      const currentFilters = state.selectedLabelFilter;
+      const isSelected = currentFilters.includes(labelId);
+
+      return {
+        selectedLabelFilter: isSelected
+          ? currentFilters.filter((id) => id !== labelId)
+          : [...currentFilters, labelId],
+      };
+    });
+  },
+
+  clearLabelFilter: () => {
+    set({ selectedLabelFilter: [] });
+  },
+
+  getFilteredCards: (columnId: string) => {
+    const state = get();
+    const column = state.board?.columns?.find((col) => col.id === columnId);
+
+    if (!column) return [];
+
+    const { selectedLabelFilter } = state;
+
+    // If no filters are active, return all cards
+    if (selectedLabelFilter.length === 0) {
+      return column.cards || [];
+    }
+
+    // Filter cards that have at least one of the selected labels
+    return (column.cards || []).filter((card) => {
+      if (!card.labels || card.labels.length === 0) {
+        return false;
+      }
+      return card.labels.some((label) =>
+        selectedLabelFilter.includes(label.id)
+      );
+    });
+  },
 }));

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Board } from "@/components/board/board";
+import { LabelFilter } from "@/components/board/label-filter";
 import { CreateBoardDialog } from "@/components/dialogs/create-board-dialog";
 import { EditCardDialog } from "@/components/dialogs/edit-card-dialog";
 import { EditColumnDialog } from "@/components/dialogs/edit-column-dialog";
@@ -117,64 +118,74 @@ export default function BoardPage({ params }: BoardPageProps) {
       <div className="flex flex-col h-screen bg-slate-100">
         {/* Header */}
         <header className="bg-white border-b border-slate-200 px-4 md:px-6 py-2 md:py-4">
-          <div className="flex items-center justify-between max-w-[2000px] mx-auto gap-3">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-lg md:text-2xl font-bold text-slate-900 truncate">
-                {board?.title}
-              </h1>
-              <p className="text-sm text-slate-600 mt-1 hidden md:block">
-                Real-time collaborative board
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {isOwner && (
-                <Button
-                  variant={board.is_locked ? "default" : "outline"}
-                  size="sm"
-                  onClick={handleToggleLock}
-                  disabled={isTogglingLock}
-                  className="flex items-center gap-2"
-                  title={board.is_locked ? "Unlock board" : "Lock board"}
-                >
-                  {board.is_locked ? (
-                    <Lock className="h-4 w-4" />
-                  ) : (
-                    <Unlock className="h-4 w-4" />
-                  )}
-                  <span className="hidden sm:inline">
-                    {board.is_locked ? "Locked" : "Unlocked"}
-                  </span>
-                </Button>
-              )}
-              {!isOwner && board.is_locked && (
-                <div className="flex items-center gap-2 text-sm text-slate-600 px-3 py-1.5 bg-slate-100 rounded-md">
-                  <Lock className="h-4 w-4" />
-                  <span className="hidden sm:inline">Read Only</span>
-                </div>
-              )}
-              {board.is_locked && !isOwner ? (
-                <div
-                  className="flex items-center gap-2 text-sm text-slate-600 px-3 py-1.5 bg-slate-100 rounded-md opacity-50 cursor-not-allowed"
-                  title="Board is locked - only the owner can manage labels"
-                >
-                  <Tag className="h-4 w-4" />
-                  <span className="hidden sm:inline">Manage Labels</span>
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={openManageLabelsDialog}
-                  className="flex items-center gap-2"
-                  title="Manage board labels"
-                >
-                  <Tag className="h-4 w-4" />
-                  <span className="hidden sm:inline">Manage Labels</span>
-                </Button>
-              )}
-              <div className="w-auto md:w-96 flex-shrink-0">
-                <ShareLink shareToken={shareToken} isLocked={board.is_locked} />
+          <div className="flex flex-col gap-3 max-w-[2000px] mx-auto">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg md:text-2xl font-bold text-slate-900 truncate">
+                  {board?.title}
+                </h1>
+                <p className="text-sm text-slate-600 mt-1 hidden md:block">
+                  Real-time collaborative board
+                </p>
               </div>
+              <div className="flex items-center gap-2">
+                {isOwner && (
+                  <Button
+                    variant={board.is_locked ? "default" : "outline"}
+                    size="sm"
+                    onClick={handleToggleLock}
+                    disabled={isTogglingLock}
+                    className="flex items-center gap-2"
+                    title={board.is_locked ? "Unlock board" : "Lock board"}
+                  >
+                    {board.is_locked ? (
+                      <Lock className="h-4 w-4" />
+                    ) : (
+                      <Unlock className="h-4 w-4" />
+                    )}
+                    <span className="hidden sm:inline">
+                      {board.is_locked ? "Locked" : "Unlocked"}
+                    </span>
+                  </Button>
+                )}
+                {!isOwner && board.is_locked && (
+                  <div className="flex items-center gap-2 text-sm text-slate-600 px-3 py-1.5 bg-slate-100 rounded-md">
+                    <Lock className="h-4 w-4" />
+                    <span className="hidden sm:inline">Read Only</span>
+                  </div>
+                )}
+                {board.is_locked && !isOwner ? (
+                  <div
+                    className="flex items-center gap-2 text-sm text-slate-600 px-3 py-1.5 bg-slate-100 rounded-md opacity-50 cursor-not-allowed"
+                    title="Board is locked - only the owner can manage labels"
+                  >
+                    <Tag className="h-4 w-4" />
+                    <span className="hidden sm:inline">Manage Labels</span>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={openManageLabelsDialog}
+                    className="flex items-center gap-2"
+                    title="Manage board labels"
+                  >
+                    <Tag className="h-4 w-4" />
+                    <span className="hidden sm:inline">Manage Labels</span>
+                  </Button>
+                )}
+                <div className="w-auto md:w-96 flex-shrink-0">
+                  <ShareLink
+                    shareToken={shareToken}
+                    isLocked={board.is_locked}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Label Filter */}
+            <div className="flex items-center">
+              <LabelFilter />
             </div>
           </div>
         </header>
