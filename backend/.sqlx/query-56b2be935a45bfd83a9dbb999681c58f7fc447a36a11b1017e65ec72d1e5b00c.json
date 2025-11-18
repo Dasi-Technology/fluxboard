@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE card_attachments\n            SET is_confirmed = true, updated_at = NOW()\n            WHERE id = $1\n            RETURNING id, card_id, uploaded_by, filename, original_filename,\n                      content_type, file_size, s3_key, s3_bucket,\n                      is_confirmed as \"is_confirmed!\",\n                      created_at as \"created_at!\",\n                      updated_at as \"updated_at!\"\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "card_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "uploaded_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "filename",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "original_filename",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "content_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "file_size",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "s3_key",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "s3_bucket",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "is_confirmed!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at!",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "updated_at!",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "56b2be935a45bfd83a9dbb999681c58f7fc447a36a11b1017e65ec72d1e5b00c"
+}
