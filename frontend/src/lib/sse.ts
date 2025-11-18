@@ -1,4 +1,4 @@
-import type { Board, Column, Card, Label } from "./types";
+import type { Board, Column, Card, Label, CardAttachment } from "./types";
 
 /**
  * SSE event types matching backend event names
@@ -18,7 +18,9 @@ export type SSEEventType =
   | "board_label:updated"
   | "board_label:deleted"
   | "card_label:assigned"
-  | "card_label:unassigned";
+  | "card_label:unassigned"
+  | "attachment:created"
+  | "attachment:deleted";
 
 /**
  * SSE event data structures matching backend event payloads
@@ -106,6 +108,18 @@ export interface SSECardLabelUnassignedEvent {
   label_id: string;
 }
 
+export interface SSEAttachmentCreatedEvent {
+  type: "attachment_created";
+  card_id: string;
+  attachment: CardAttachment;
+}
+
+export interface SSEAttachmentDeletedEvent {
+  type: "attachment_deleted";
+  card_id: string;
+  attachment_id: string;
+}
+
 /**
  * Union type for all SSE events
  */
@@ -124,7 +138,9 @@ export type SSEEvent =
   | SSEBoardLabelUpdatedEvent
   | SSEBoardLabelDeletedEvent
   | SSECardLabelAssignedEvent
-  | SSECardLabelUnassignedEvent;
+  | SSECardLabelUnassignedEvent
+  | SSEAttachmentCreatedEvent
+  | SSEAttachmentDeletedEvent;
 
 /**
  * Event handler type for SSE events
@@ -274,6 +290,14 @@ export class SSEClient {
     });
     this.eventSource.addEventListener("card_label:unassigned", (e) => {
       this.handleEvent("card_label:unassigned", e);
+    });
+
+    // Attachment events
+    this.eventSource.addEventListener("attachment:created", (e) => {
+      this.handleEvent("attachment:created", e);
+    });
+    this.eventSource.addEventListener("attachment:deleted", (e) => {
+      this.handleEvent("attachment:deleted", e);
     });
   }
 

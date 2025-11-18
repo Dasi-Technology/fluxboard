@@ -15,7 +15,7 @@ mod utils;
 
 use config::Config;
 use db::init_pool;
-use services::AiService;
+use services::{AiService, S3Service};
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
@@ -58,6 +58,13 @@ async fn main() -> io::Result<()> {
         Arc::new(AiService::new(key))
     });
 
+    // Initialize S3 service
+    let s3_service = S3Service::new(&config)
+        .await
+        .expect("Failed to initialize S3 service");
+    let s3_service = Arc::new(s3_service);
+    info!("S3 service initialized");
+
     // Start HTTP server
     let config_clone = config.clone();
     HttpServer::new(move || {
@@ -87,7 +94,9 @@ async fn main() -> io::Result<()> {
             // Share SSE manager across all handlers
             .app_data(web::Data::new(sse_manager.clone()))
             // Share config across all handlers
-            .app_data(web::Data::new(config_clone.clone()));
+            .app_data(web::Data::new(config_clone.clone()))
+            // Share S3 service across all handlers
+            .app_data(web::Data::new(s3_service.clone()));
 
         // Add AI service if available
         if let Some(ref ai_svc) = ai_service {

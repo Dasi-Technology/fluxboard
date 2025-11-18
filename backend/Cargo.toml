@@ -35,6 +35,13 @@ jsonwebtoken = "9.2"
 validator = { version = "0.18", features = ["derive"] }
 sha2 = "0.10"
 
+# S3 Integration
+aws-config = "1.5"
+aws-sdk-s3 = "1.51"
+tokio-util = { version = "0.7", features = ["codec"] }
+bytes = "1.7"
+mime = "0.3"
+
 # Logging
 env_logger = "0.11"
 log = "0.4"

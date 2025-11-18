@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { useUIStore } from "@/store/ui-store";
 import { useBoard } from "@/hooks/use-board";
 import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
+import { AttachmentThumbnail } from "@/components/card/attachment-thumbnail";
+import { useBoardStore } from "@/store/board-store";
 
 interface CardProps {
   card: CardType;
@@ -18,6 +20,7 @@ interface CardProps {
 export function Card({ card, isReadOnly = false }: CardProps) {
   const { deleteCard } = useBoard();
   const { openEditCardDialog } = useUIStore();
+  const { board } = useBoardStore();
 
   const {
     attributes,
@@ -111,6 +114,14 @@ export function Card({ card, isReadOnly = false }: CardProps) {
             </Badge>
           ))}
         </div>
+      )}
+
+      {card.attachments && card.attachments.length > 0 && (
+        <AttachmentThumbnail
+          cardId={card.id}
+          attachments={card.attachments}
+          shareToken={board?.share_token}
+        />
       )}
     </div>
   );

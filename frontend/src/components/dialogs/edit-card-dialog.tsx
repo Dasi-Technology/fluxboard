@@ -20,6 +20,8 @@ import { useBoard } from "@/hooks/use-board";
 import type { Card } from "@/lib/types";
 import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 import { generateDescription, type DescriptionFormat } from "@/lib/api";
+import { AttachmentUpload } from "@/components/card/attachment-upload";
+import { AttachmentList } from "@/components/card/attachment-list";
 
 export function EditCardDialog() {
   const { isEditCardDialogOpen, selectedCardId, closeEditCardDialog } =
@@ -240,6 +242,17 @@ export function EditCardDialog() {
                   No labels available. Create labels from the board menu.
                 </p>
               )}
+            </div>
+
+            <div>
+              <Label>Attachments</Label>
+              <div className="mt-2 space-y-4">
+                <AttachmentUpload
+                  cardId={selectedCardId || ""}
+                  shareToken={board?.share_token}
+                  currentAttachmentCount={card?.attachments?.length || 0}
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>

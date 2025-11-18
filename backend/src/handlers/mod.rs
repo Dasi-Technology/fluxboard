@@ -3,6 +3,7 @@
 //! This module contains all HTTP request handlers for the REST API.
 //! Handlers are organized by resource type.
 
+pub mod attachment_handlers;
 pub mod auth_handlers;
 pub mod board_handlers;
 pub mod card_handlers;
@@ -10,7 +11,7 @@ pub mod column_handlers;
 pub mod label_handlers;
 pub mod sse_handlers;
 
-use crate::auth_middleware::auth::RequireAuth;
+use crate::auth_middleware::auth::{OptionalAuth, RequireAuth};
 use crate::config::Config;
 use actix_web::web;
 
@@ -117,6 +118,33 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .route(
                 "/cards/{card_id}/labels/{label_id}",
                 web::delete().to(label_handlers::unassign_label_from_card),
+            )
+            // Attachment routes (require auth for upload/delete)
+            .service(
+                web::resource("/cards/{card_id}/attachments/upload-url")
+                    .route(web::post().to(attachment_handlers::generate_upload_url))
+                    .wrap(RequireAuth::new(Config::from_env())),
+            )
+            .service(
+                web::resource("/cards/{card_id}/attachments/{attachment_id}/confirm")
+                    .route(web::post().to(attachment_handlers::confirm_attachment))
+                    .wrap(RequireAuth::new(Config::from_env())),
+            )
+            .service(
+                web::resource("/attachments/{attachment_id}")
+                    .route(web::delete().to(attachment_handlers::delete_attachment))
+                    .wrap(RequireAuth::new(Config::from_env())),
+            )
+            // Attachment routes (optional auth for viewing)
+            .service(
+                web::resource("/cards/{card_id}/attachments")
+                    .route(web::get().to(attachment_handlers::list_card_attachments))
+                    .wrap(OptionalAuth::new(Config::from_env())),
+            )
+            .service(
+                web::resource("/attachments/{attachment_id}/download-url")
+                    .route(web::get().to(attachment_handlers::generate_download_url))
+                    .wrap(OptionalAuth::new(Config::from_env())),
             ),
     );
 }

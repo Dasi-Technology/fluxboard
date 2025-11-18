@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { SSEClient, SSEEvent, SSEConnectionStatus } from "@/lib/sse";
 import { useBoardStore } from "@/store/board-store";
-import type { Board, Column, Card, BoardLabel } from "@/lib/types";
+import type {
+  Board,
+  Column,
+  Card,
+  BoardLabel,
+  CardAttachment,
+} from "@/lib/types";
 
 export const useSSE = (shareToken: string | null) => {
   const sseClientRef = useRef<SSEClient | null>(null);
@@ -23,6 +29,8 @@ export const useSSE = (shareToken: string | null) => {
     deleteBoardLabel,
     assignLabelToCard,
     unassignLabelFromCard,
+    addAttachment,
+    removeAttachment,
   } = useBoardStore();
 
   useEffect(() => {
@@ -141,6 +149,19 @@ export const useSSE = (shareToken: string | null) => {
           break;
         }
 
+        case "attachment_created": {
+          const { card_id, attachment } = event;
+          const cardAttachment = attachment as CardAttachment;
+          addAttachment(card_id, cardAttachment);
+          break;
+        }
+
+        case "attachment_deleted": {
+          const { card_id, attachment_id } = event;
+          removeAttachment(card_id, attachment_id);
+          break;
+        }
+
         default:
           console.warn("[useSSE] Unknown event type:", event);
       }
@@ -182,6 +203,8 @@ export const useSSE = (shareToken: string | null) => {
     deleteBoardLabel,
     assignLabelToCard,
     unassignLabelFromCard,
+    addAttachment,
+    removeAttachment,
   ]);
 
   return {

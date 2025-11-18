@@ -13,6 +13,7 @@ import { useBoard } from "@/hooks/use-board";
 import { useSSE } from "@/hooks/use-sse";
 import { useBoardStore } from "@/store/board-store";
 import { useUIStore } from "@/store/ui-store";
+import { useAuthStore } from "@/store/auth-store";
 import { addRecentBoard } from "@/lib/recent-boards";
 import { Button } from "@/components/ui/button";
 import { Tag, Lock, Unlock } from "lucide-react";
@@ -30,10 +31,16 @@ export default function BoardPage({ params }: BoardPageProps) {
   const { loadBoard } = useBoard();
   const { board, isLoading, error, reset, updateBoard } = useBoardStore();
   const { openManageLabelsDialog } = useUIStore();
+  const { checkAuth } = useAuthStore();
   const [isTogglingLock, setIsTogglingLock] = useState(false);
 
   // Check if user is the board owner
   const isOwner = board ? isBoardOwner(board.share_token) : false;
+
+  // Initialize authentication state on mount
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   // Establish SSE connection
   useSSE(shareToken);

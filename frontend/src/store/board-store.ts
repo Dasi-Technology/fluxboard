@@ -1,5 +1,11 @@
 import { create } from "zustand";
-import type { Board, Column, Card, BoardLabel } from "@/lib/types";
+import type {
+  Board,
+  Column,
+  Card,
+  BoardLabel,
+  CardAttachment,
+} from "@/lib/types";
 
 interface BoardStore {
   board: Board | null;
@@ -41,6 +47,10 @@ interface BoardStore {
   // Card-Label assignment operations (new)
   assignLabelToCard: (cardId: string, labelId: string) => void;
   unassignLabelFromCard: (cardId: string, labelId: string) => void;
+
+  // Attachment operations
+  addAttachment: (cardId: string, attachment: CardAttachment) => void;
+  removeAttachment: (cardId: string, attachmentId: string) => void;
 
   // Filter operations
   setLabelFilter: (labelIds: string[]) => void;
@@ -599,6 +609,72 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
             board: { ...state.board, columns },
           }
         : state;
+    }),
+
+  // Attachment operations
+  addAttachment: (cardId, attachment) =>
+    set((state) => {
+      if (!state.board?.columns) return state;
+
+      const columns = state.board.columns.map((col) => {
+        const hasCard = col.cards?.some((card) => card.id === cardId);
+        if (!hasCard) return col;
+
+        const cards = col.cards?.map((card) => {
+          if (card.id === cardId) {
+            // Check if attachment already exists to prevent duplicates from SSE
+            const existingAttachment = card.attachments?.find(
+              (a) => a.id === attachment.id
+            );
+            if (existingAttachment) {
+              console.log(
+                "[BoardStore] Attachment already exists, skipping duplicate:",
+                attachment.id
+              );
+              return card;
+            }
+            return {
+              ...card,
+              attachments: [...(card.attachments || []), attachment],
+            };
+          }
+          return card;
+        });
+
+        return { ...col, cards };
+      });
+
+      return {
+        board: { ...state.board, columns },
+      };
+    }),
+
+  removeAttachment: (cardId, attachmentId) =>
+    set((state) => {
+      if (!state.board?.columns) return state;
+
+      const columns = state.board.columns.map((col) => {
+        const hasCard = col.cards?.some((card) => card.id === cardId);
+        if (!hasCard) return col;
+
+        const cards = col.cards?.map((card) => {
+          if (card.id === cardId) {
+            return {
+              ...card,
+              attachments: card.attachments?.filter(
+                (a) => a.id !== attachmentId
+              ),
+            };
+          }
+          return card;
+        });
+
+        return { ...col, cards };
+      });
+
+      return {
+        board: { ...state.board, columns },
+      };
     }),
 
   // Filter operations

@@ -33,6 +33,21 @@ export interface Card {
   created_at: string;
   updated_at: string;
   labels?: BoardLabel[];
+  attachments?: CardAttachment[];
+}
+
+export interface CardAttachment {
+  id: string;
+  card_id: string;
+  uploaded_by: string;
+  filename: string;
+  original_filename: string;
+  content_type: string;
+  file_size: number;
+  s3_key: string;
+  is_confirmed: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface BoardLabel {

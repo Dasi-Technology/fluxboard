@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use super::{BoardLabel, Card, Column};
+use super::{BoardLabel, Card, CardAttachment, Column};
 
 /// Board model representing a Kanban board
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
@@ -47,7 +47,7 @@ pub struct ColumnWithCards {
     pub cards: Vec<CardWithLabels>,
 }
 
-/// Card with labels
+/// Card with labels and attachments
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CardWithLabels {
     pub id: Uuid,
@@ -58,6 +58,7 @@ pub struct CardWithLabels {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub labels: Vec<BoardLabel>,
+    pub attachments: Vec<CardAttachment>,
 }
 
 /// Input data for creating a new board
@@ -193,11 +194,14 @@ impl Board {
             // Get all cards for this column
             let cards = Card::find_by_column_id(pool, column.id).await?;
 
-            // Build cards with labels
+            // Build cards with labels and attachments
             let mut cards_with_labels = Vec::new();
             for card in cards {
                 // Get all labels for this card
                 let labels = BoardLabel::find_by_card_id(pool, card.id).await?;
+
+                // Get all attachments for this card
+                let attachments = CardAttachment::find_by_card_id(pool, card.id).await?;
 
                 cards_with_labels.push(CardWithLabels {
                     id: card.id,
@@ -208,6 +212,7 @@ impl Board {
                     created_at: card.created_at,
                     updated_at: card.updated_at,
                     labels,
+                    attachments,
                 });
             }
 

@@ -67,6 +67,16 @@ pub enum SseEvent {
         card_id: Uuid,
         label_id: Uuid,
     },
+
+    // Card attachment events
+    AttachmentCreated {
+        attachment: crate::models::attachment::CardAttachment,
+        card_id: Uuid,
+    },
+    AttachmentDeleted {
+        attachment_id: Uuid,
+        card_id: Uuid,
+    },
 }
 
 impl SseEvent {
@@ -88,6 +98,8 @@ impl SseEvent {
             SseEvent::BoardLabelDeleted { .. } => "board_label:deleted",
             SseEvent::CardLabelAssigned { .. } => "card_label:assigned",
             SseEvent::CardLabelUnassigned { .. } => "card_label:unassigned",
+            SseEvent::AttachmentCreated { .. } => "attachment:created",
+            SseEvent::AttachmentDeleted { .. } => "attachment:deleted",
         }
     }
 
