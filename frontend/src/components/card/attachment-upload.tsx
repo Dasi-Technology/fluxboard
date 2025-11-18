@@ -183,7 +183,11 @@ export function AttachmentUpload({
           <p className="text-xs text-muted-foreground mb-2">
             Please login to upload attachments
           </p>
-          <Button onClick={() => setShowAuthDialog(true)} size="sm">
+          <Button
+            onClick={() => setShowAuthDialog(true)}
+            size="sm"
+            type="button"
+          >
             Login
           </Button>
         </div>
