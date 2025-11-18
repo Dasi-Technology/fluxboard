@@ -1,7 +1,7 @@
 # Multi-stage build for Fluxboard backend
 
 # Builder stage
-FROM rust:1.91 AS builder
+FROM rust:1.91-bookworm AS builder
 
 # Create app directory
 WORKDIR /usr/src/app
