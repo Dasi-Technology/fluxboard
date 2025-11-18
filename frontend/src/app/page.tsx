@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { CreateBoardDialog } from "@/components/dialogs/create-board-dialog";
 import { Toast } from "@/components/shared/toast";
 import { useUIStore } from "@/store/ui-store";
+import { useAuthStore } from "@/store/auth-store";
 import {
   getRecentBoardsLimited,
   searchRecentBoards,
@@ -19,18 +20,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Search, Github } from "lucide-react";
+import { Search, Github, LogIn } from "lucide-react";
+import { AuthDialog } from "@/components/auth/auth-dialog";
+import { UserMenu } from "@/components/auth/user-menu";
 
 export default function Home() {
   const { openCreateBoardDialog } = useUIStore();
+  const { isAuthenticated, checkAuth } = useAuthStore();
   const [recentBoards, setRecentBoards] = useState<RecentBoard[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     setRecentBoards(getRecentBoardsLimited());
-  }, []);
+    checkAuth();
+  }, [checkAuth]);
 
   // Handle search
   useEffect(() => {
@@ -60,6 +66,25 @@ export default function Home() {
     <>
       <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="w-full max-w-5xl space-y-12">
+          {/* Header with Auth */}
+          {mounted && (
+            <div className="fixed top-4 right-4 z-50">
+              {isAuthenticated ? (
+                <UserMenu />
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAuthDialogOpen(true)}
+                  className="gap-2"
+                >
+                  <LogIn className="h-4 w-4" />
+                  <span>Log In</span>
+                </Button>
+              )}
+            </div>
+          )}
+
           {/* Hero Section */}
           <div className="w-full max-w-md mx-auto space-y-8 text-center">
             <div>
@@ -83,7 +108,9 @@ export default function Home() {
 
             <div className="pt-8 border-t border-slate-200">
               <p className="text-sm text-slate-500">
-                Collaborate in real-time • No sign-up required • Share instantly
+                Collaborate in real-time •{" "}
+                {isAuthenticated ? "Signed in" : "No sign-up required"} • Share
+                instantly
               </p>
             </div>
           </div>
@@ -161,6 +188,10 @@ export default function Home() {
       </main>
 
       <CreateBoardDialog />
+      <AuthDialog
+        isOpen={isAuthDialogOpen}
+        onClose={() => setIsAuthDialogOpen(false)}
+      />
       <Toast />
     </>
   );

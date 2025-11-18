@@ -1,8 +1,9 @@
-use actix_web::{App, HttpServer, middleware, web};
+use actix_web::{App, HttpServer, web};
 use log::info;
 use std::io;
 use std::sync::Arc;
 
+mod auth_middleware;
 mod config;
 mod db;
 mod error;
@@ -84,7 +85,9 @@ async fn main() -> io::Result<()> {
             // Share database pool across all handlers
             .app_data(web::Data::new(pool.clone()))
             // Share SSE manager across all handlers
-            .app_data(web::Data::new(sse_manager.clone()));
+            .app_data(web::Data::new(sse_manager.clone()))
+            // Share config across all handlers
+            .app_data(web::Data::new(config_clone.clone()));
 
         // Add AI service if available
         if let Some(ref ai_svc) = ai_service {
@@ -93,12 +96,12 @@ async fn main() -> io::Result<()> {
 
         app
             // Enable logger middleware
-            .wrap(middleware::Logger::default())
+            .wrap(actix_web::middleware::Logger::default())
             // CORS middleware
             .wrap(cors)
             // Health check endpoint
             .route("/health", web::get().to(health_check))
-            // Configure API routes (including SSE)
+            // Configure API routes (including SSE and auth)
             .configure(handlers::configure_routes)
     })
     .bind((config.server_host.as_str(), config.server_port))?

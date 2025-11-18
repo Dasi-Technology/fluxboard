@@ -3,18 +3,32 @@
 //! This module contains all HTTP request handlers for the REST API.
 //! Handlers are organized by resource type.
 
+pub mod auth_handlers;
 pub mod board_handlers;
 pub mod card_handlers;
 pub mod column_handlers;
 pub mod label_handlers;
 pub mod sse_handlers;
 
+use crate::auth_middleware::auth::RequireAuth;
+use crate::config::Config;
 use actix_web::web;
 
 /// Configure all API routes
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api")
+            // Auth routes (public)
+            .route("/auth/register", web::post().to(auth_handlers::register))
+            .route("/auth/login", web::post().to(auth_handlers::login))
+            .route("/auth/refresh", web::post().to(auth_handlers::refresh))
+            .route("/auth/logout", web::post().to(auth_handlers::logout))
+            // Auth routes (protected)
+            .service(
+                web::resource("/auth/me")
+                    .route(web::get().to(auth_handlers::get_current_user))
+                    .wrap(RequireAuth::new(Config::from_env())),
+            )
             // SSE route
             .route(
                 "/sse/{share_token}",

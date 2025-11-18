@@ -15,6 +15,12 @@ pub struct Config {
     pub cors_origin: Option<String>,
     /// Gemini API key for AI features
     pub gemini_api_key: Option<String>,
+    /// JWT secret key for token signing
+    pub jwt_secret: String,
+    /// Access token expiry in seconds (default: 900 = 15 minutes)
+    pub jwt_access_token_expiry: i64,
+    /// Refresh token expiry in seconds (default: 2592000 = 30 days)
+    pub jwt_refresh_token_expiry: i64,
 }
 
 impl Config {
@@ -30,6 +36,15 @@ impl Config {
             rust_log: env::var("RUST_LOG").unwrap_or_else(|_| "info".to_string()),
             cors_origin: env::var("CORS_ORIGIN").ok(),
             gemini_api_key: env::var("GEMINI_API_KEY").ok(),
+            jwt_secret: env::var("JWT_SECRET").expect("JWT_SECRET must be set"),
+            jwt_access_token_expiry: env::var("JWT_ACCESS_TOKEN_EXPIRY")
+                .unwrap_or_else(|_| "900".to_string())
+                .parse()
+                .expect("JWT_ACCESS_TOKEN_EXPIRY must be a valid i64"),
+            jwt_refresh_token_expiry: env::var("JWT_REFRESH_TOKEN_EXPIRY")
+                .unwrap_or_else(|_| "2592000".to_string())
+                .parse()
+                .expect("JWT_REFRESH_TOKEN_EXPIRY must be a valid i64"),
         }
     }
 }

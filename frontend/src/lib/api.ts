@@ -1,4 +1,8 @@
-import axios, { AxiosInstance } from "axios";
+import axios, {
+  AxiosInstance,
+  AxiosError,
+  InternalAxiosRequestConfig,
+} from "axios";
 import type {
   Board,
   Column,
@@ -7,6 +11,7 @@ import type {
   SetLockStateRequest,
 } from "./types";
 import { getBoardPassword } from "./board-passwords";
+import { getAccessToken, clearTokens } from "./auth-api";
 
 // Create axios instance with base configuration
 const api: AxiosInstance = axios.create({
@@ -16,6 +21,57 @@ const api: AxiosInstance = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+// Request interceptor to add auth token
+api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const token = getAccessToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor to handle 401 errors
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
+
+    // If we get a 401 and haven't retried yet, try to refresh the token
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // Import dynamically to avoid circular dependency
+        const { useAuthStore } = await import("@/store/auth-store");
+        await useAuthStore.getState().refreshAccessToken();
+
+        // Retry the original request with new token
+        const token = getAccessToken();
+        if (token && originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+        }
+        return api(originalRequest);
+      } catch (refreshError) {
+        // Refresh failed, clear tokens and redirect to login
+        clearTokens();
+        if (typeof window !== "undefined") {
+          window.location.href = "/";
+        }
+        return Promise.reject(refreshError);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 /**
  * Helper function to get headers with board password if available

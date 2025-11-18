@@ -13,7 +13,7 @@ tokio = { version = "1.41", features = ["full"] }
 tokio-stream = "0.1"
 
 # Database
-sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "uuid", "chrono", "migrate", "macros"] }
+sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "uuid", "chrono", "migrate", "macros", "ipnetwork"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
@@ -27,6 +27,13 @@ dotenvy = "0.15"
 futures-util = "0.3"
 futures = "0.3"
 reqwest = { version = "0.12", features = ["json"] }
+hex = "0.4"
+
+# Authentication
+argon2 = "0.5"
+jsonwebtoken = "9.2"
+validator = { version = "0.18", features = ["derive"] }
+sha2 = "0.10"
 
 # Logging
 env_logger = "0.11"
